@@ -38,7 +38,7 @@
           <div class="product-info">
             <h3>{{ product.name }}</h3>
             <p class="price">¥ {{ product.price }}</p>
-            <button class="add-to-cart">加入购物车</button>
+            <button class="buy-now" @click="goToDetail(product)">立即购买</button>
           </div>
         </div>
       </div>
@@ -158,7 +158,7 @@
           margin-bottom: 10px;
         }
 
-        .add-to-cart {
+        .buy-now {
           background-color: #ff6700;
           color: white;
           border: none;
@@ -282,6 +282,13 @@ export default {
       this.page = 1;
       this.products = []; // 清空现有产品列表
       this.fetchProducts(); // 请求新类别下的产品
+    },
+    goToDetail(product) {
+      this.$router.push({
+        name: 'product',
+        params: { id: product.id },
+        state: { product }
+      });
     },
   },
   mounted() {
