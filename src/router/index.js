@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import ProductView from '../views/ProductView.vue'
 
 Vue.use(VueRouter)
 
@@ -39,6 +40,30 @@ const routes = [
     path: '/cart',
     name: 'cart',
     component: () => import('../views/CartView.vue')
+  },
+  {
+    path: '/product/:id',
+    name: 'product',
+    component: ProductView
+  },
+  {
+    path: '/order/confirm',
+    name: 'order-confirm',
+    component: () => import('../views/OrderConfirmView.vue')
+  },
+  {
+    path: '/order/success',
+    name: 'order-success',
+    component: () => import('../views/OrderSuccessView.vue')
+  },
+  {
+    path: '/user/orders',
+    name: 'user-orders',
+    component: () => import('../views/usermodel/UserOrdersView.vue')
+  },{
+    path: '/ad',
+    name: 'AdManagement',
+    component: () => import('../views/AdManagement.vue')
   }
 ]
 
