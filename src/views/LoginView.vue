@@ -59,6 +59,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'LoginView',
   data() {
@@ -66,18 +68,43 @@ export default {
       loginForm: {
         username: '',
         password: '',
-        remember: false
+        remember: false  // 记住密码字段仍然存在，但不发送给后端
       }
     }
   },
   methods: {
-    handleLogin() {
-      // 这里处理登录逻辑
-      console.log('登录表单提交：', this.loginForm)
-    }
+  handleLogin() {
+    const loginParams = new URLSearchParams();
+    loginParams.append('username', this.loginForm.username);
+    loginParams.append('password', this.loginForm.password);
+
+    axios.post('http://localhost:8081/users/login', loginParams)
+      .then(response => {
+        const data = response.data;
+        if (data.status === 'success') {
+          console.log('登录成功:', data.message);
+          this.$router.push({ name: 'home' });
+        } else {
+          console.error('登录失败:', data.message);
+          alert(data.message);
+        }
+      })
+      .catch(error => {
+        const errorMessage = error.response?.data?.message || '服务器错误';
+        console.error('登录失败:', errorMessage);
+        alert(errorMessage);
+      });
   }
 }
+
+}
 </script>
+
+
+<style scoped>
+/* 你的样式代码保持不变 */
+</style>
+
 
 <style lang="scss" scoped>
 .login-page {
