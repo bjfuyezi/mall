@@ -35,6 +35,7 @@
           <router-link to="/hot">热销商品</router-link>
           <router-link to="/promotion">优惠活动</router-link>
           <router-link to="/shopmodel/asshop">成为商家</router-link>
+          <router-link to="/shopmodel/shopManage">店铺管理</router-link>
         </div>
       </div>
     </nav>

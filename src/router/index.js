@@ -65,6 +65,31 @@ const routes = [
     path: '/shopmodel/asshop',
     name: 'shop-asshop',
     component: () => import('../views/shopmodel/AsshopView.vue')
+  },
+  {
+    path: '/shopmodel/info',
+    name: 'shop-info',
+    component: () => import('../views/shopmodel/ShopInfoView.vue')
+  },
+  {
+    path: '/shopmodel/productManage',
+    name: 'product-management',
+    component: () => import('../views/shopmodel/ProductManagementView.vue')
+  },
+  {
+    path: '/shopmodel/promotionManage',
+    name: 'promotion-management',
+    component: () => import('../views/shopmodel/PromotionManagementView.vue')
+  },
+  {
+    path: '/shopmodel/couponManage',
+    name: 'coupon-management',
+    component: () => import('../views/shopmodel/CouponManagementView.vue')
+  },
+  {
+    path: '/shopmodel/shopManage',
+    name: 'shop-management',
+    component: () => import('../views/shopmodel/ShopManagementView.vue')
   }
 ]
 
