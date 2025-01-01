@@ -17,9 +17,9 @@
       <!-- 轮播广告 -->
       <div class="banner" v-if="banners.length">
         <div class="banner-content">
-          <vue-slick-carousel v-bind="settings">
-            <div v-for="(slide, index) in banners" :key="index" class="slide">
-              <img :src="slide.imagePath" alt="Slide Image" />
+          <vue-slick-carousel v-bind="settings" @afterChange="logSlideChange">
+            <div v-for="(slide, index) in banners" :key="index" class="slide" >
+              <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
             </div>
           </vue-slick-carousel>
         </div>
@@ -55,6 +55,7 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 15px;
+    max-height: 400px;
 
     .category-sidebar {
       width: 20%; /* 左侧栏宽度 */
@@ -95,16 +96,28 @@
     }
 
     .banner {
-      flex-grow: 1; /* 让右侧占满剩余空间 */
-      background-color: #f5f5f5;
+  flex-grow: 1;
+  background-color: #f5f5f5;
+  max-height: 400px; // 明确设定最大高度为400px
+  max-width: 80%;
+  overflow: hidden; // 防止内容溢出
 
-      .banner-content {
-        img {
-          width: 100%;
-          height: 400px;
-        }
-      }
-    }
+
+.banner-content {
+  height: 100%; // 确保 banner 内容占据全部可用空间
+}
+
+.slide {
+  height: 100%; /* 每个 slide 占据全部可用空间 */
+}
+
+.slide img {
+  width: auto; // 允许宽度根据比例调整
+  height: 100%; // 图片占据 slide 的全部高度
+  object-fit: cover; // 保证图片被裁剪并覆盖整个区域
+  display: block; // 避免底部空白
+}
+}
   }
 
   .products-section {
@@ -193,7 +206,7 @@ export default {
   },
   data() {
     return {
-      banners: [{ imagePath: 'img/test.jpg' }, ], // 存储轮播图的数据
+      banners: [], // 存储轮播图的数据
       products: [], // 存储商品的数据
       page: 1, // 当前页码
       loadingMore: false, // 是否正在加载更多商品
@@ -206,15 +219,16 @@ export default {
         { label: '书籍', value: 'books' },
         // 添加更多类别...
       ],
-      settings: {
-        dots: true,
-        infinite: true,
-        speed: 500,
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-      },
+settings: {
+  dots: true,
+  infinite: true,
+  speed: 500, // 过渡动画速度
+  slidesToShow: 1,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 2000, // 每张图片展示时间，例如5秒
+  lazyLoad: 'ondemand', // 按需懒加载图片
+},
       selectedCategory: 'all', // 默认选中的类别
     };
   },
@@ -224,13 +238,24 @@ export default {
   },
   methods: {
     async fetchBanners() {
-      try {
-        const response = await axios.get('/api/banners');
-        this.banners = response.data;
-      } catch (error) {
-        console.error('获取轮播图失败:', error);
+  try {
+    const response = await axios.get('http://localhost:8081/advertise/banner');
+    this.banners = response.data;
+
+    // 销毁并重新初始化轮播图
+    this.$nextTick(() => {
+      if (this.$refs.carousel) {
+        this.$refs.carousel.destroy(); // 销毁当前实例
+        this.$nextTick(() => {
+          this.$refs.carousel.init(); // 重新初始化
+          this.$refs.carousel.play(); // 启动自动播放
+        });
       }
-    },
+    });
+  } catch (error) {
+    console.error('获取轮播图失败:', error);
+  }
+},
     async fetchProducts() {
       try {
         this.loadingMore = true;
@@ -289,11 +314,19 @@ export default {
         params: { id: product.id },
         state: { product }
       });
-    },
+    },logSlideChange(index) {
+    console.log('当前幻灯片索引:', index);
+    console.log('当前幻灯片数据:', this.banners[index]);
+  },
   },
   mounted() {
         this.$nextTick(() => {
       window.addEventListener('scroll', this.handleScroll);
+
+       // 确保组件已挂载并且所有图片都加载完毕后启动自动播放
+    if (this.$refs.carousel && this.banners.length > 0) {
+      this.$refs.carousel.play();
+    }
     });
   },
   beforeDestroy() {
