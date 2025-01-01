@@ -16,8 +16,22 @@
             <router-link to="/cart">购物车</router-link> 
           </div>
           <div class="user">
-            <router-link to="/login">登录</router-link> | 
-            <router-link to="/register">注册</router-link>
+            <template v-if="isAuthenticated">
+              <el-dropdown @command="handleCommand">
+                <span class="el-dropdown-link">
+                  {{ currentUser.username }}<i class="el-icon-arrow-down el-icon--right"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
+                  <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+                  <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </template>
+            <template v-else>
+              <router-link to="/login">登录</router-link> | 
+              <router-link to="/register">注册</router-link>
+            </template>
           </div>
         </div>
       </div>
@@ -43,6 +57,33 @@
     <router-view/>
   </div>
 </template>
+
+<script>
+import { mapGetters } from 'vuex'
+
+export default {
+  computed: {
+    ...mapGetters(['isAuthenticated', 'currentUser'])
+  },
+  methods: {
+    handleCommand(command) {
+      switch(command) {
+        case 'userCenter':
+          this.$router.push('/user/center');
+          break;
+        case 'orders':
+          this.$router.push('/user/orders');
+          break;
+        case 'logout':
+          this.$store.dispatch('logout');
+          this.$router.push('/login');
+          break;
+      }
+    }
+  }
+}
+</script>
+
 
 <style lang="scss">
 // 重置默认样式
@@ -142,6 +183,27 @@
           color: #ffd;
         }
       }
+    }
+  }
+}
+
+.el-dropdown-link {
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
+  
+  &:hover {
+    color: #ff6700;
+  }
+}
+
+.el-dropdown-menu {
+  .el-dropdown-item {
+    color: #333;
+    
+    &:hover {
+      color: #ff6700;
     }
   }
 }
