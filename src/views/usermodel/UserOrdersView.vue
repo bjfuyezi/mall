@@ -270,7 +270,7 @@ export default {
       });
     },
     viewOrderDetail(order) {
-      this.$router.push(`/user/orders/${order.id}`)
+      this.$router.push(`/user/orders/${order.id}`);
     },
     scrollToOrder(orderId) {
       // 可以添加一些视觉效果，比如高亮显示该订单
