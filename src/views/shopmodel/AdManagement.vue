@@ -44,12 +44,12 @@
   </div>
 </template>
 <script>
-import AdList from '../components/AdList.vue';
-import AddAdForm from '../components/AddAdForm.vue';
-import AdDetailsModal from '../components/AdDetailsModal.vue';
+import AdList from '../../components/AdList.vue';
+import AddAdForm from '../../components/AddAdForm.vue';
+import AdDetailsModal from '../../components/AdDetailsModal.vue';
 
 export default {
-  name: 'AdManagement',
+  name: 'promotion-management',
   components: {
     AddAdForm,
     AdList,

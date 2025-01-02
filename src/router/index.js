@@ -79,7 +79,7 @@ const routes = [
   {
     path: '/shopmodel/promotionManage',
     name: 'promotion-management',
-    component: () => import('../views/shopmodel/PromotionManagementView.vue')
+    component: () => import('../views/shopmodel/AdManagement.vue')
   },
   {
     path: '/shopmodel/couponManage',
@@ -107,7 +107,7 @@ const routes = [
   path: '/user/address',
   name: 'user-address',
   component: () => import('@/views/UserAddress.vue'),
-  meta: { requiresAuth: true }}
+  meta: { requiresAuth: true }},
 ]
 
 const router = new VueRouter({

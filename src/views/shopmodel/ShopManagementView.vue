@@ -63,10 +63,7 @@
   
           <!-- 其他功能的内容部分类似 -->
           <div class="section" v-if="currentTab === 'promotion-management'">
-            <h2>推广管理</h2>
-            <div class="content">
-              <p>查看和管理推广活动。</p>
-            </div>
+            
           </div>
   
           <div class="section" v-if="currentTab === 'coupon-management'">
