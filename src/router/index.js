@@ -108,6 +108,12 @@ const routes = [
   name: 'user-address',
   component: () => import('@/views/UserAddress.vue'),
   meta: { requiresAuth: true }},
+  {
+    path: '/ad',
+    name: 'AdManageMent',
+    component: () => import('../views/AdManagement.vue'),
+   }
+   
 ]
 
 const router = new VueRouter({
