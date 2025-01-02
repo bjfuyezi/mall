@@ -6,9 +6,7 @@
   </template>
   
   <script>
-  export default {
-    name: 'ShopInfo', // 页面组件的名称
-  };
+  
   </script>
   
   <style scoped>
