@@ -1,148 +1,223 @@
 <template>
   <div id="app">
-    <!-- 顶部导航栏 -->
-    <header class="header">
-      <div class="header-content">
-        <div class="logo">
-          <img src="@/assets/logo.png" alt="Logo">
-        </div>
+    <el-header>
+      <div class="header-container">
+        <!-- 左侧 Logo -->
+        <router-link to="/" class="logo">
+          商城
+        </router-link>
+
+        <!-- 中间搜索框 -->
         <div class="search-box">
-          <input type="text" placeholder="搜索商品">
-          <button>搜索</button>
+          <el-input
+            placeholder="请输入商品名称"
+            v-model="searchKeyword"
+            class="search-input"
+          >
+            <el-button slot="append" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+          </el-input>
         </div>
-        <div class="header-right">
-          <div class="cart">
-            <i class="fas fa-shopping-cart"></i>
-            <router-link to="/cart">购物车</router-link> 
-          </div>
-          <div class="user">
-            <router-link to="/login">登录</router-link> | 
-            <router-link to="/register">注册</router-link>
+
+        <!-- 右侧用户操作区 -->
+        <div class="user-actions">
+          <router-link to="/user/orders" class="action-item">
+            <i class="el-icon-s-order"></i>
+            <span>我的订单</span>
+          </router-link>
+          <router-link to="/cart" class="action-item">
+            <i class="el-icon-shopping-cart-2"></i>
+            <span>购物车</span>
+          </router-link>
+          <template v-if="!isAuthenticated">
+            <router-link to="/login" class="action-item">登录</router-link>
+            <router-link to="/register" class="action-item">注册</router-link>
+          </template>
+          <el-dropdown v-else @command="handleCommand" class="action-item">
+            <span class="el-dropdown-link">
+              {{ currentUser.username }}<i class="el-icon-arrow-down el-icon--right"></i>
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
+              <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+        </div>
+      </div>
+
+      <!-- 下方导航菜单 -->
+      <div class="nav-menu">
+        <div class="nav-container">
+          <div class="nav-left">
+            <router-link to="/" class="nav-item">首页</router-link>
+            <router-link to="/new" class="nav-item">新品</router-link>
+            <router-link to="/hot" class="nav-item">热卖</router-link>
+            <router-link to="/promotion" class="nav-item">优惠</router-link>
+            <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
+            <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
           </div>
         </div>
       </div>
-    </header>
-
-    <!-- 主导航菜单 -->
-    <nav class="main-nav">
-      <div class="nav-content">
-        <div class="categories">
-          <span>全部商品分类</span>
-        </div>
-        <div class="nav-links">
-          <router-link to="/">首页</router-link>
-          <router-link to="/new">新品上市</router-link>
-          <router-link to="/hot">热销商品</router-link>
-          <router-link to="/promotion">优惠活动</router-link>
-          <router-link to="/shopmodel/asshop">成为商家</router-link>
-        </div>
-      </div>
-    </nav>
-
-    <!-- 路由视图 -->
+    </el-header>
     <router-view/>
   </div>
 </template>
 
+<script>
+import { mapGetters } from 'vuex'
+
+export default {
+  name: 'App',
+  data() {
+    return {
+      searchKeyword: ''
+    }
+  },
+  computed: {
+    ...mapGetters(['isAuthenticated', 'currentUser'])
+  },
+  methods: {
+    handleSearch() {
+      // 实现搜索功能
+      console.log('搜索:', this.searchKeyword)
+    },
+    handleCommand(command) {
+      switch(command) {
+        case 'userCenter':
+          this.$router.push('/user/center');
+          break;
+        case 'orders':
+          this.$router.push('/user/orders');
+          break;
+        case 'logout':
+          this.$store.dispatch('logout');
+          this.$router.push('/login');
+          break;
+      }
+    }
+  }
+}
+</script>
+
 <style lang="scss">
-// 重置默认样式
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  font-family: Arial, sans-serif;
 }
 
-// 头部样式
-.header {
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  
-  .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
 
-  .logo {
-    img {
-      height: 40px;
-    }
-  }
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff6700;
+  text-decoration: none;
+  min-width: 200px;
+}
 
-  .search-box {
-    display: flex;
-    
-    input {
-      width: 400px;
-      padding: 8px 15px;
-      border: 2px solid #ff6700;
-      border-right: none;
-      outline: none;
-    }
+.search-box {
+  flex: 1;
+  max-width: 500px;
+  margin: 0 40px;
 
-    button {
-      padding: 8px 20px;
+  .search-input {
+    .el-input-group__append {
       background-color: #ff6700;
+      border-color: #ff6700;
       color: white;
-      border: none;
-      cursor: pointer;
-    }
-  }
-
-  .header-right {
-    display: flex;
-    gap: 20px;
-    
-    .cart, .user {
-      cursor: pointer;
-    }
-  }
-}
-
-// 主导航样式
-.main-nav {
-  background-color: #ff6700;
-  
-  .nav-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    
-    .categories {
-      padding: 15px 30px;
-      color: white;
-      cursor: pointer;
       
       &:hover {
         background-color: #f85000;
-      }
-    }
-    
-    .nav-links {
-      display: flex;
-      gap: 30px;
-      
-      a {
-        color: white;
-        text-decoration: none;
-        padding: 15px 0;
-        
-        &:hover {
-          color: #ffd;
-        }
+        border-color: #f85000;
       }
     }
   }
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  .action-item {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    
+    i {
+      font-size: 18px;
+    }
+
+    &:hover {
+      color: #ff6700;
+    }
+  }
+}
+
+.nav-menu {
+  background-color: #f5f5f5;
+  border-top: 1px solid #e8e8e8;
+  margin-top: 10px;
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+
+  .nav-left {
+    display: flex;
+    gap: 30px;
+
+    .nav-item {
+      color: #333;
+      text-decoration: none;
+      font-size: 14px;
+      line-height: 40px;
+      
+      &:hover, &.router-link-active {
+        color: #ff6700;
+      }
+    }
+  }
+}
+
+.el-header {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0;
+  height: auto !important;
+}
+
+.el-dropdown-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  
+  .el-icon--right {
+    margin-left: 5px;
+  }
+}
+
+#app {
+  padding-top: 110px;
 }
 </style>
