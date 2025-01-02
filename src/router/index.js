@@ -67,14 +67,70 @@ const routes = [
     component: () => import('../views/shopmodel/AsshopView.vue')
   },
   {
-    path: '/user/review',
-    name: 'user-review',
-    component: () => import('../views/usermodel/UserComment.vue')
-  }
+    path: '/shopmodel/info',
+    name: 'shop-info',
+    component: () => import('../views/shopmodel/ShopInfoView.vue')
+  },
+  {
+    path: '/shopmodel/productManage',
+    name: 'product-management',
+    component: () => import('../views/shopmodel/ProductManagementView.vue')
+  },
+  {
+    path: '/shopmodel/promotionManage',
+    name: 'promotion-management',
+    component: () => import('../views/shopmodel/AdManagement.vue')
+  },
+  {
+    path: '/shopmodel/couponManage',
+    name: 'coupon-management',
+    component: () => import('../views/shopmodel/CouponManagementView.vue')
+  },
+  {
+    path: '/shopmodel/shopManage',
+    name: 'shop-management',
+    component: () => import('../views/shopmodel/ShopManagementView.vue')
+
+  },{
+  path: '/user/center',
+  name: 'user-center',
+  component: () => import('@/views/UserCenter.vue'),
+  meta: { requiresAuth: true }
+},
+{
+  path: '/user/profile',
+  name: 'user-profile',
+  component: () => import('@/views/UserProfile.vue'),
+  meta: { requiresAuth: true }
+},
+{
+  path: '/user/address',
+  name: 'user-address',
+  component: () => import('@/views/UserAddress.vue'),
+  meta: { requiresAuth: true }},
 ]
 
 const router = new VueRouter({
   routes
 })
+
+// 全局路由守卫
+router.beforeEach((to, from, next) => {
+  const store = router.app.$store;
+  
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // 检查是否已登录
+    if (!store.getters.isAuthenticated) {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 export default router
