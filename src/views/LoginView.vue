@@ -73,31 +73,38 @@ export default {
     }
   },
   methods: {
-  handleLogin() {
-    const loginParams = new URLSearchParams();
-    loginParams.append('username', this.loginForm.username);
-    loginParams.append('password', this.loginForm.password);
+    handleLogin() {
+      const loginParams = new URLSearchParams();
+      loginParams.append('username', this.loginForm.username);
+      loginParams.append('password', this.loginForm.password);
 
-    axios.post('http://localhost:8081/users/login', loginParams)
-      .then(response => {
-        const data = response.data;
-        if (data.status === 'success') {
-          console.log('登录成功:', data.message);
-          this.$router.push({ name: 'home' });
-        } else {
-          console.error('登录失败:', data.message);
-          alert(data.message);
-        }
-      })
-      .catch(error => {
-        const errorMessage = error.response?.data?.message || '服务器错误';
-        console.error('登录失败:', errorMessage);
-        alert(errorMessage);
-      });
+      axios.post('http://localhost:8081/users/login', loginParams)
+        .then(response => {
+          const data = response.data;
+          if (data.status === 'success') {
+            // 登录成功，保存用户信息到 Vuex
+            this.$store.dispatch('login', {
+              username: this.loginForm.username,
+              // 其他用户信息...
+            });
+            
+            console.log('登录成功:', data.message);
+            const redirectPath = this.$route.query.redirect || '/';
+            this.$router.push(redirectPath);
+          } else {
+            console.error('登录失败:', data.message);
+            alert(data.message);
+          }
+        })
+        .catch(error => {
+          const errorMessage = error.response?.data?.message || '服务器错误';
+          console.error('登录失败:', errorMessage);
+          alert(errorMessage);
+        });
+    }
   }
 }
 
-}
 </script>
 
 
