@@ -62,6 +62,11 @@ const routes = [
     component: () => import('../views/usermodel/UserOrdersView.vue')
   },
   {
+    path: '/user/review',
+    name: 'user-review',
+    component: () => import('../views/usermodel/UserComment.vue')
+  },
+  {
     path: '/shopmodel/asshop',
     name: 'shop-asshop',
     component: () => import('../views/shopmodel/AsshopView.vue')
