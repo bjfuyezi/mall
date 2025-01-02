@@ -1,109 +1,115 @@
 <template>
   <div class="user-profile">
-    <div class="profile-container">
-      <h2>个人资料</h2>
-      <el-form :model="profileForm" :rules="rules" ref="profileForm" label-width="100px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="profileForm.username" disabled></el-input>
+    <el-card class="profile-card">
+      <div slot="header" class="card-header">
+        <span>个人资料</span>
+        <el-button type="text" @click="startEdit" v-if="!isEditing">编辑</el-button>
+      </div>
+      
+      <el-form :model="userForm" :disabled="!isEditing" label-width="100px">
+        <el-form-item label="用户名">
+          <el-input v-model="userForm.username" disabled></el-input>
         </el-form-item>
-        
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="profileForm.email"></el-input>
+        <el-form-item label="邮箱">
+          <el-input v-model="userForm.email"></el-input>
         </el-form-item>
-        
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input type="password" v-model="profileForm.newPassword"></el-input>
+        <el-form-item label="密码" v-if="isEditing">
+          <el-input v-model="userForm.password" type="password" placeholder="留空表示不修改"></el-input>
         </el-form-item>
-        
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input type="password" v-model="profileForm.confirmPassword"></el-input>
-        </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" @click="submitForm">保存修改</el-button>
-          <el-button @click="resetForm">重置</el-button>
+        <el-form-item v-if="isEditing">
+          <el-button type="primary" @click="saveProfile">保存</el-button>
+          <el-button @click="cancelEdit">取消</el-button>
         </el-form-item>
       </el-form>
-    </div>
+    </el-card>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default {
   name: 'UserProfile',
   data() {
-    const validatePass2 = (rule, value, callback) => {
-      if (value !== this.profileForm.newPassword) {
-        callback(new Error('两次输入密码不一致!'));
-      } else {
-        callback();
-      }
-    };
     return {
-      profileForm: {
+      userForm: {
         username: '',
         email: '',
-        newPassword: '',
-        confirmPassword: ''
+        password: ''
       },
-      rules: {
-        email: [
-          { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-        ],
-        confirmPassword: [
-          { validator: validatePass2, trigger: 'blur' }
-        ]
-      }
+      isEditing: false,
+      originalForm: null
     }
   },
   computed: {
-    ...mapGetters(['currentUser'])
-  },
-  created() {
-    this.getUserInfo();
+    ...mapState({
+      currentUser: state => state.user
+    }),
+    ...mapGetters(['userId'])
   },
   methods: {
-    getUserInfo() {
-      this.$axios.get(`http://localhost:8081/users/detail/${this.currentUser.username}`)
-        .then(response => {
-          if (response.data.status === 'success') {
-            const { username, email } = response.data.data;
-            this.profileForm.username = username;
-            this.profileForm.email = email;
-          }
-        });
-    },
-    submitForm() {
-      this.$refs.profileForm.validate(valid => {
-        if (valid) {
-          const updateData = {
-            username: this.profileForm.username,
-            email: this.profileForm.email
-          };
-          if (this.profileForm.newPassword) {
-            updateData.password = this.profileForm.newPassword;
-          }
-          
-          this.$axios.put('http://localhost:8081/users/update', updateData)
-            .then(response => {
-              if (response.data.status === 'success') {
-                this.$message.success('个人信息更新成功');
-                this.$store.dispatch('login', { username: this.profileForm.username });
-              }
-            })
-            .catch(error => {
-              this.$message.error('更新失败：' + error.message);
-            });
+    async loadUserProfile() {
+      try {
+        const response = await fetch(`http://localhost:8081/users/${this.userId}`);
+        const data = await response.json();
+        if (data.status === 'success') {
+          this.userForm = { ...data.data, password: '' };
+          this.originalForm = { ...data.data };
         }
-      });
+      } catch (error) {
+        this.$message.error('获取用户信息失败');
+      }
     },
-    resetForm() {
-      this.$refs.profileForm.resetFields();
-      this.getUserInfo();
+    startEdit() {
+      this.isEditing = true;
+      this.originalForm = { ...this.userForm };
+    },
+    cancelEdit() {
+      this.isEditing = false;
+      this.userForm = { ...this.originalForm, password: '' };
+    },
+    async saveProfile() {
+      try {
+        const response = await fetch('http://localhost:8081/users/profile/update', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(this.userForm)
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          this.$message.success('保存成功');
+          this.isEditing = false;
+          await this.loadUserProfile();
+          this.$store.dispatch('updateUserProfile', this.userForm);
+        } else {
+          this.$message.error(data.message || '保存失败');
+        }
+      } catch (error) {
+        this.$message.error('保存失败');
+      }
     }
+  },
+  created() {
+    this.loadUserProfile();
   }
 }
-</script> 
+</script>
+
+<style scoped>
+.user-profile {
+  padding: 20px;
+}
+
+.profile-card {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style> 
