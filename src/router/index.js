@@ -113,6 +113,12 @@ const routes = [
   name: 'user-address',
   component: () => import('@/views/UserAddress.vue'),
   meta: { requiresAuth: true }},
+  {
+    path: '/ad',
+    name: 'AdManageMent',
+    component: () => import('../views/shopmodel/AdManagement.vue'),
+   }
+   
 {
   path: '/shopmodel/addProduct',
   name: 'addProduct',
