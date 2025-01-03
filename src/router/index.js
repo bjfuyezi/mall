@@ -119,6 +119,11 @@ const routes = [
     component: () => import('../views/shopmodel/AdManagement.vue'),
    }
    
+{
+  path: '/shopmodel/addProduct',
+  name: 'addProduct',
+  component: () => import('../views/shopmodel/AddProduct.vue'),
+},
 ]
 
 const router = new VueRouter({
