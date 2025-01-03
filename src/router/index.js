@@ -111,7 +111,7 @@ const routes = [
   {
     path: '/ad',
     name: 'AdManageMent',
-    component: () => import('../views/AdManagement.vue'),
+    component: () => import('../views/shopmodel/AdManagement.vue'),
    }
    
 ]
