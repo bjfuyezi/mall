@@ -193,10 +193,10 @@ export default {
 .ad-status.approved {
   background-color: #5cb85c;
 }
-.ad-status.inProgress {
+.ad-status.running {
   background-color: #5bc0de;
 }
-.ad-status.completed {
+.ad-status.expired {
   background-color: #555;
   color: #fff; /* 确保文本可见 */
 }
