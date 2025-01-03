@@ -7,23 +7,6 @@
         <div class="product-main">
           <div class="product-gallery">
             <img :src="product.mainImage" :alt="product.name">
-            <el-button 
-              type="danger" 
-              class="quick-buy-btn"
-              size="large"
-              @click="quickBuy"
-            >
-              立即购买
-            </el-button>
-            <div class="thumbnail-list">
-              <img 
-                v-for="(img, index) in product.images" 
-                :key="index"
-                :src="img"
-                :alt="product.name"
-                @click="product.mainImage = img"
-              >
-            </div>
           </div>
           <div class="product-info">
             <h1>{{ product.name }}</h1>
@@ -38,6 +21,14 @@
               <span>评价 {{ product.reviews }}</span>
               <span>收藏 {{ product.favorites }}</span>
             </div>
+            <el-button 
+              type="danger" 
+              class="quick-buy-btn"
+              size="large"
+              @click="quickBuy"
+            >
+              立即购买
+            </el-button>
           </div>
         </div>
 
@@ -131,11 +122,6 @@ export default {
         price: 999,
         originalPrice: 1299,
         mainImage: 'https://via.placeholder.com/400x400',
-        images: [
-          'https://via.placeholder.com/400x400',
-          'https://via.placeholder.com/400x400',
-          'https://via.placeholder.com/400x400'
-        ],
         sales: 1000,
         reviews: 500,
         favorites: 200,
@@ -254,42 +240,6 @@ export default {
     height: auto;
     border-radius: 4px;
   }
-
-  .quick-buy-btn {
-    position: absolute;
-    bottom: 80px;  /* 调整按钮位置，留出缩略图空间 */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 50px;
-    font-size: 18px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  &:hover {
-    .quick-buy-btn {
-      opacity: 1;
-    }
-  }
-
-  .thumbnail-list {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-
-    img {
-      width: 60px;
-      height: 60px;
-      object-fit: cover;
-      cursor: pointer;
-      border: 2px solid transparent;
-
-      &:hover {
-        border-color: #ff6700;
-      }
-    }
-  }
 }
 
 .product-info {
@@ -317,10 +267,18 @@ export default {
 
   .product-stats {
     color: #666;
+    margin-bottom: 20px;
     
     span {
       margin-right: 20px;
     }
+  }
+
+  .quick-buy-btn {
+    width: 180px;
+    height: 48px;
+    font-size: 18px;
+    margin-top: 10px;
   }
 }
 
