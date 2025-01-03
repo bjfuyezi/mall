@@ -78,7 +78,6 @@ export default {
   },
   methods: {
     handleSearch() {
-      // 实现搜索功能
       console.log('搜索:', this.searchKeyword)
     },
     handleCommand(command) {
@@ -91,6 +90,7 @@ export default {
           break;
         case 'logout':
           this.$store.dispatch('logout');
+          this.$message.success('已退出登录');
           this.$router.push('/login');
           break;
       }

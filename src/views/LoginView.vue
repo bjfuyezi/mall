@@ -68,50 +68,46 @@ export default {
       loginForm: {
         username: '',
         password: '',
-        remember: false  // 记住密码字段仍然存在，但不发送给后端
+        remember: false
       }
     }
   },
   methods: {
-    handleLogin() {
-      const loginParams = new URLSearchParams();
-      loginParams.append('username', this.loginForm.username);
-      loginParams.append('password', this.loginForm.password);
+    async handleLogin() {
+      try {
+        // 创建登录参数
+        const formData = new FormData();
+        formData.append('username', this.loginForm.username);
+        formData.append('password', this.loginForm.password);
 
-      axios.post('http://localhost:8081/users/login', loginParams)
-        .then(response => {
-          const data = response.data;
-          if (data.status === 'success') {
-            // 登录成功，保存用户信息到 Vuex
-            this.$store.dispatch('login', {
-              username: this.loginForm.username,
-              // 其他用户信息...
-            });
-            
-            console.log('登录成功:', data.message);
+        // 登录请求
+        const loginResponse = await axios.post('http://localhost:8081/users/login', formData);
+        
+        if (loginResponse.data.status === 'success') {
+          // 登录成功后获取用户详细信息并保存到 Vuex
+          const success = await this.$store.dispatch('login', {
+            username: this.loginForm.username,
+            password: this.loginForm.password
+          });
+
+          if (success) {
+            this.$message.success('登录成功');
             const redirectPath = this.$route.query.redirect || '/';
             this.$router.push(redirectPath);
           } else {
-            console.error('登录失败:', data.message);
-            alert(data.message);
+            this.$message.error('获取用户信息失败');
           }
-        })
-        .catch(error => {
-          const errorMessage = error.response?.data?.message || '服务器错误';
-          console.error('登录失败:', errorMessage);
-          alert(errorMessage);
-        });
+        } else {
+          this.$message.error(loginResponse.data.message || '登录失败');
+        }
+      } catch (error) {
+        const errorMessage = error.response?.data?.message || '服务器错误';
+        this.$message.error(errorMessage);
+      }
     }
   }
 }
-
 </script>
-
-
-<style scoped>
-/* 你的样式代码保持不变 */
-</style>
-
 
 <style lang="scss" scoped>
 .login-page {
