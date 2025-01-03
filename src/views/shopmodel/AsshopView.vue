@@ -73,7 +73,7 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      user_id: 2,   // session的用户id，还没写
+      user_id: 1,   // session的用户id，还没写
       statusMessage: '',
       form: {
         shop_name: '',
@@ -139,7 +139,7 @@ export default {
             } else if  (status === 'almost shop') {
               this.statusMessage = "您已成为商家，请前往【店铺管理】进行操作！";
             } else {
-              this.statusMessage = response.data;
+              this.statusMessage = status;
             }
           } else {
             // 如果没有找到 shop_status，显示表单

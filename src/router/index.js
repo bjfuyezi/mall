@@ -113,6 +113,11 @@ const routes = [
   name: 'user-address',
   component: () => import('@/views/UserAddress.vue'),
   meta: { requiresAuth: true }},
+{
+  path: '/shopmodel/addProduct',
+  name: 'addProduct',
+  component: () => import('../views/shopmodel/AddProduct.vue'),
+},
 ]
 
 const router = new VueRouter({
