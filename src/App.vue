@@ -55,6 +55,8 @@
             <router-link to="/promotion" class="nav-item">优惠</router-link>
             <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
             <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
+            <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
+            <router-link to="/shopmodel/addProduct" class="nav-item">添加商品</router-link>
           </div>
         </div>
       </div>
@@ -78,7 +80,6 @@ export default {
   },
   methods: {
     handleSearch() {
-      // 实现搜索功能
       console.log('搜索:', this.searchKeyword)
     },
     handleCommand(command) {
@@ -91,6 +92,7 @@ export default {
           break;
         case 'logout':
           this.$store.dispatch('logout');
+          this.$message.success('已退出登录');
           this.$router.push('/login');
           break;
       }
