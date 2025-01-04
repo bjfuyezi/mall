@@ -2,7 +2,10 @@
   <div class="user-profile">
     <el-card class="profile-card" shadow="never">
       <div slot="header" class="card-header">
-        <span>个人资料</span>
+        <div class="header-left">
+          <el-button icon="el-icon-arrow-left" type="text" @click="goBack">返回</el-button>
+          <span class="title">修改个人资料</span>
+        </div>
         <el-button type="text" @click="startEdit" v-if="!isEditing">
           <i class="el-icon-edit"></i> 编辑
         </el-button>
@@ -100,6 +103,9 @@ export default {
       } catch (error) {
         this.$message.error('保存失败');
       }
+    },
+    goBack() {
+      this.$router.push('/user/center');
     }
   },
   created() {
@@ -120,10 +126,16 @@ export default {
       padding: 15px 0;
       border-bottom: 2px solid #ff6700;
 
-      span {
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+        }
       }
     }
 

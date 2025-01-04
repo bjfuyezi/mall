@@ -2,7 +2,10 @@
   <div class="address-list">
     <el-card shadow="never">
       <div slot="header" class="card-header">
-        <span>收货地址</span>
+        <div class="header-left">
+          <el-button icon="el-icon-arrow-left" type="text" @click="goBack">返回</el-button>
+          <span class="title">收货地址</span>
+        </div>
         <el-button type="primary" size="small" @click="showAddDialog">
           <i class="el-icon-plus"></i> 新增地址
         </el-button>
@@ -217,6 +220,9 @@ export default {
           }
         }
       });
+    },
+    goBack() {
+      this.$router.push('/user/center');
     }
   },
   created() {
@@ -234,10 +240,16 @@ export default {
     padding: 15px 0;
     border-bottom: 2px solid #ff6700;
 
-    span {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
     }
   }
 
