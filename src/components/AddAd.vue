@@ -1,6 +1,6 @@
 <template>
   <form @submit.prevent="handleSubmit" class="add-ad-form">  
-    <h2>添加新广告</h2>
+    <h2>购买曝光量</h2>
 
     <!-- 广告标题 -->
     <div class="form-group">
@@ -8,18 +8,8 @@
       <input id="name" v-model="formData.name" type="text" required />
     </div>
 
-    <!-- 广告类型 -->
-    <div class="form-group">
-      <label for="type">类型</label>
-      <select id="type" v-model="formData.type" @change="onTypeChange" required>
-        <option value="shop">店铺广告</option>
-        <option value="product">产品广告</option>
-        <!-- 添加其他可能的广告类型 -->
-      </select>
-    </div>
-
 <!-- 动态显示的产品选择下拉列表 -->
-    <div v-if="showProductSelect" class="form-group">
+    <div class="form-group">
       <label for="product">选择商品</label>
       <select id="product" v-model="formData.selectedProduct" required>
         <option v-for="product in products" :key="product.id" :value="product.id">
@@ -28,22 +18,15 @@
       </select>
     </div>
 
-    <!-- 开始时间 -->
     <div class="form-group">
-      <label for="start_time">开始时间</label>
-      <input id="start_time" v-model="formData.start_time" type="datetime-local" required />
-    </div>
-
-    <!-- 结束时间 -->
-    <div class="form-group">
-      <label for="end_time">结束时间</label>
-      <input id="end_time" v-model="formData.end_time" type="datetime-local" required />
+      <label for="times">选择曝光量</label>
+      <input id="times" v-model="formData.times" type="text" @change="price_cal" required />
     </div>
 
     <!-- 价格 -->
     <div class="form-group">
       <label for="price">价格 (元)</label>
-      <input id="price" v-model.number="formData.price" type="number" step="0.01" min="0" required />
+      <input id="price" v-model.number="formData.price" type="number" step="0.01" min="0" disabled/>
     </div>
 
   <!-- 图片上传 -->
@@ -51,22 +34,7 @@
       <label for="picture">图片</label>
       <input id="picture" ref="pictureInput" type="file" @change="handleFileChange" />
       <span v-if="formData.picture">{{ formData.picture.name }}</span>
-      <span v-else class="error">请选择一个文件</span>
-    </div>
-
-<!-- 是否申请banner页广告 -->
-    <div class="form-group">
-      <label>是否申请banner页广告</label>
-      <div>
-        <label>
-          <input type="radio" name="banner" value="true" v-model="formData.banner" />
-          是
-        </label>
-        <label>
-          <input type="radio" name="banner" value="false" v-model="formData.banner" checked />
-          否
-        </label>
-      </div>
+      <span v-else class="error" >请选择封面图片，默认使用商品封面</span>
     </div>
 
     <!-- 提交按钮 -->
@@ -80,25 +48,24 @@
 <script>
 import axios from 'axios';
 export default {
-  name: 'AddAdForm',
+  name: 'AddAd',
   data() {
     return {
       formData: {
         ps_id: null,
         name: '',
-        type: 'shop',
-        start_time: null,
-        end_time: null,
         price: null,
         picture: null, // 这里将保存文件对象
-        banner: false,
-        selectedProduct: null // 新增字段用于存储选中的产品ID
+        selectedProduct: null, // 新增字段用于存储选中的产品ID
+        times: 0//推广次数
       },
-      showProductSelect: false, // 控制是否显示产品选择下拉列表
       isSubmitting: false,
       error: null,
       products: [], // 存储从后端获取的产品列表
     };
+  },
+  created(){
+    this.getProucts()
   },
   methods: {
     handleFileChange(event) {
@@ -124,21 +91,30 @@ export default {
       // 返回格式化的日期字符串
       return `${year}-${month}-${day} 00:00:00`;
     },
-    async onTypeChange() {
-      if (this.formData.type === 'product') {
+    async getProucts() {
         try {
           // 从后端获取产品列表
-          const response = await axios.get('http://localhost:8081/products');
-          this.products = response.data; // 假设后端返回的是一个产品数组
-          this.showProductSelect = true; // 显示产品选择下拉列表
+          //const response = await axios.get('http://localhost:8081/products');
+          this.products = [{id:1,name:'商品1'},{id:2,name:'商品2'},{id:3,name:'商品3'}]//response.data; // 假设后端返回的是一个产品数组
         } catch (err) {
           this.error = '无法加载产品列表，请稍后再试';
         }
-      } else {
-        this.showProductSelect = false;
-        this.products = [];
-        this.formData.selectedProduct = null;
-      }
+    },
+    async price_cal(){
+        try {
+          const response = await axios.get('http://localhost:8081/advertise/money',{
+            params: {
+            start: "",
+            end: "",
+            times: this.formData.times,
+            banner: false
+            }
+            });
+          this.formData.price = response.data; // 假设后端返回的是一个价格
+          console.log(this.price)
+        } catch (err) {
+          this.error = '无法加载预计价格，请稍等';
+        }
     },
     async handleSubmit() {
       try {
@@ -147,15 +123,14 @@ export default {
 
         const formData = new FormData();
         formData.append('name', this.formData.name);
-        // 如果是产品广告，附加选中的产品ID
-        if (this.formData.type === 'product' && this.formData.selectedProduct) {
-            formData.append('ps_id', this.convertToInt(this.formData.selectedProduct));
-        }else formData.append('ps_id', -1);
-        formData.append('type', this.formData.type);
-        formData.append('start_time', this.formatDate(this.formData.start_time));
-        formData.append('end_time', this.formatDate(this.formData.end_time));
+        // 曝光量必须是商品广告
+        formData.append('ps_id', this.convertToInt(this.formData.selectedProduct));
+        formData.append('type', 'product');
+        formData.append('start_time', null);
+        formData.append('end_time', null);
+        formData.append('times', this.convertToInt(this.formData.times));
         formData.append('price', this.convertToFloat(this.formData.price));
-        formData.append('banner', this.formData.banner.toString());
+        formData.append('banner', false);
 
         // 添加文件（如果有）
         if (this.formData.picture) {
@@ -164,9 +139,7 @@ export default {
 
         // 发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
-        if(response.status==200){
-          alert('申请成功');
-        }
+
         console.log(response);
         console.log('Form submitted:', formData);
         this.$emit('adAdded', { ...this.formData });
@@ -181,12 +154,10 @@ export default {
       this.formData = {
         ps_id: null,
         name: '',
-        type: 'shop',
         start_time: null,
         end_time: null,
         price: null,
         picture: null,
-        banner: false
       };
       // 手动清除文件输入框
       this.$refs.pictureInput.value = null;
@@ -201,6 +172,8 @@ export default {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: calc(80vh - 100px);
+  overflow-y: auto; /* 当内容超出容器的高度时，允许垂直滚动 */
 
   h2 {
     margin-top: 0;
@@ -218,7 +191,7 @@ export default {
     }
 
     input, textarea, select {
-      width: 100%;
+      width: 90%;
       padding: 0.5rem;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -233,6 +206,13 @@ export default {
     textarea {
       resize: vertical;
     }
+    .error{
+      display: inline-block;
+    }
+   input.radio-group {
+      display: inline-block;
+      max-width: 10px; 
+   }
   }
 
   button {

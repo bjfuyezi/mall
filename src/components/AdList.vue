@@ -87,6 +87,7 @@ export default {
     },
     statusClass(status) {
       // 将英文状态转换为小写并移除空格作为类名
+      console.log(status.toLowerCase().replace(/\s+/g, ''));
       return status.toLowerCase().replace(/\s+/g, '');
     }
   }

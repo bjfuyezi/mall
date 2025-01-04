@@ -1,14 +1,24 @@
 <template>
   <div class="ad-management">
     <header>
-      <button @click="toggleAddAdModal" class="add-ad-btn">添加广告</button>
+      <button @click="toggleBannerModal" class="add-ad-btn">添加广告</button>
+      <button @click="toggleAddAdModal" class="add-ad-btn">购买曝光量</button>
     </header>
 
     <!-- 添加广告的弹窗 -->
     <transition name="modal-fade">
+      <div v-if="showBannerModal" class="modal-overlay" @click.self="closeBannerModal">
+        <div class="modal-container">
+          <AddBanner @close="closeBannerModal" @adAdded="handleBanner"></AddBanner>
+        </div>
+      </div>
+    </transition>
+
+        <!-- 购买曝光的弹窗 -->
+    <transition name="modal-fade">
       <div v-if="showAddAdModal" class="modal-overlay" @click.self="closeAddAdModal">
         <div class="modal-container">
-          <AddAdForm @close="closeAddAdModal" @adAdded="handleAdAdded"></AddAdForm>
+          <AddAd @close="closeAddAdModal" @adAdded="handleAdAdded"></AddAd>
         </div>
       </div>
     </transition>
@@ -45,19 +55,22 @@
 </template>
 <script>
 import AdList from '../../components/AdList.vue';
-import AddAdForm from '../../components/AddAdForm.vue';
+import AddBanner from '../../components/AddBanner.vue';
+import AddAd from '../../components/AddAd.vue';
 import AdDetailsModal from '../../components/AdDetailsModal.vue';
 
 export default {
   name: 'promotion-management',
   components: {
-    AddAdForm,
+    AddBanner,
     AdList,
-    AdDetailsModal
+    AdDetailsModal,
+    AddAd
   },
   data() {
     return {
       showAddAdModal: false, 
+      showBannerModal: false, 
       statusFilter: 'all',
       selectedAd: null,
       // 定义可用的状态选项
@@ -65,9 +78,9 @@ export default {
         { value: 'all', label: '全部' },
         { value: 'pending', label: '待审核' },
         { value: 'approved', label: '已通过' },
-        { value: 'inProgress', label: '进行中' },
+        { value: 'running', label: '进行中' },
         { value: 'rejected', label: '被拒绝' },
-        { value: 'completed', label: '已完成' }
+        { value: 'expired', label: '已完成' }
       ]
     };
   },
@@ -84,6 +97,18 @@ export default {
     closeAddAdModal() {
       this.showAddAdModal = false;
     },
+    toggleBannerModal() {
+      this.showBannerModal = !this.showBannerModal;
+    },
+    handleBanner() {
+      this.closeBannerModal();
+      this.$nextTick(() => {
+        // 刷新广告列表的逻辑...
+      });
+    },
+    closeBannerModal() {
+      this.showBannerModal = false;
+    },
     viewAdDetails(ad) {
       this.selectedAd = ad;
     },
@@ -94,6 +119,11 @@ export default {
 };
 </script>
 <style scoped lang="scss">
+.modal-container {
+  max-height: 80vh; // 设置模态框的最大高度为视口高度的80%
+  width: 60vh; 
+  overflow-y: auto; // 当内容超出容器的高度时，允许垂直滚动
+}
 .ad-management {
   padding: 20px;
   background-color: #f7f7f7;
