@@ -87,6 +87,7 @@ export default {
     },
     statusClass(status) {
       // 将英文状态转换为小写并移除空格作为类名
+      console.log(status.toLowerCase().replace(/\s+/g, ''));
       return status.toLowerCase().replace(/\s+/g, '');
     }
   }
@@ -193,10 +194,10 @@ export default {
 .ad-status.approved {
   background-color: #5cb85c;
 }
-.ad-status.inProgress {
+.ad-status.running {
   background-color: #5bc0de;
 }
-.ad-status.completed {
+.ad-status.expired {
   background-color: #555;
   color: #fff; /* 确保文本可见 */
 }
