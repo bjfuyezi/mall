@@ -21,7 +21,7 @@
         <!-- 定价 -->
         <div class="form-group">
           <label for="price">定价</label>
-          <input v-model="product.price" type="number" id="price" min="0" required />
+          <input v-model="product.price" type="number" id="price" min="0" step="0.01" required />
         </div>
   
         <!-- 商品描述 -->
@@ -93,6 +93,7 @@
     data() {
       return {
         shop_id: 4,     // session获取
+        pictures_id: '',  // 存储图片的id
         product: {
           name: '',
           category: '',
@@ -131,11 +132,11 @@
 
             // 验证文件类型和大小
             if (['image/jpeg', 'image/png'].includes(fileType) && fileSize <= 20 * 1024 * 1024) { // 限制大小为5MB以内
-            const reader = new FileReader();
-            reader.onload = (e) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
                 this.$set(this.product.images, index, {
                 file: file,
-                preview: e.target.result
+                previewUrl: e.target.result
                 });
             };
             reader.readAsDataURL(file);
@@ -147,7 +148,7 @@
       removeImage(index) {
         this.product.images.splice(index, 1);
       },
-      submitForm() {
+      async submitForm() {
         // 准备表单数据
         const formData = new FormData();
         formData.append('name', this.product.name);
@@ -156,29 +157,47 @@
         formData.append('description', this.product.description);
         formData.append('unit', this.product.unit);
         formData.append('notice', this.product.notice);
+        formData.append('shop_id', this.shop_id);
 
         // 将库存信息（每个口味和数量）添加到 FormData 中
-        this.product.stock.forEach((stock, index) => {
-            formData.append(`stock[${index}][flavor]`, stock.flavor);
-            formData.append(`stock[${index}][quantity]`, stock.quantity);
-        });
+        formData.append('stock', JSON.stringify(this.product.stock));
 
         // 将图片信息添加到 FormData 中（最多5个文件）
-        this.product.images.forEach((image, index) => {
+        for (let image of this.product.images){
             if (image.file) {
-            formData.append(`images[${index}]`, image.file); // 传递文件
+              let imageData = new FormData();
+              imageData.append("file", image.file);
+              const response = await axios.post('http://localhost:8081/pic/uploadAndId', imageData);
+              if ( response.status === 200 ){
+                this.pictures_id = this.pictures_id + response.data + ",";
+                imageData = null;
+              } else {
+                  console.error('文件上传失败');
+              }
             }
-        });
+        }
+        // 将图片信息（id列表）添加到 FormData 中
+        formData.append('images', this.pictures_id);
 
         axios.post('http://localhost:8081/product/addProduct', formData)
             .then(response => {
               if ( response.status === 200 ){
                 alert('申请成功');
+                // 关闭弹窗啥的
+              } else if ( response.status === 409 ) {
+                alert('存在重名商品，请重新输入');
                 window.location.reload();
+              } else {
+                alert('找不到店铺，请检查登录状态');
               }
             })
             .catch(error => {
-              console.error('申请失败', error);
+              if ( error.response.status === 409 ){
+                alert('存在重名商品，请重新输入');
+                window.location.reload();
+              } else {
+                alert('找不到店铺，请检查登录状态');
+              }
             });
       }
     }
