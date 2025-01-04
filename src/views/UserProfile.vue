@@ -1,12 +1,18 @@
 <template>
   <div class="user-profile">
-    <el-card class="profile-card">
+    <el-card class="profile-card" shadow="never">
       <div slot="header" class="card-header">
         <span>个人资料</span>
-        <el-button type="text" @click="startEdit" v-if="!isEditing">编辑</el-button>
+        <el-button type="text" @click="startEdit" v-if="!isEditing">
+          <i class="el-icon-edit"></i> 编辑
+        </el-button>
       </div>
       
-      <el-form :model="userForm" :disabled="!isEditing" label-width="100px">
+      <el-form 
+        :model="userForm" 
+        :disabled="!isEditing" 
+        label-width="100px"
+        class="profile-form">
         <el-form-item label="用户名">
           <el-input v-model="userForm.username" disabled></el-input>
         </el-form-item>
@@ -14,7 +20,12 @@
           <el-input v-model="userForm.email"></el-input>
         </el-form-item>
         <el-form-item label="密码" v-if="isEditing">
-          <el-input v-model="userForm.password" type="password" placeholder="留空表示不修改"></el-input>
+          <el-input 
+            v-model="userForm.password" 
+            type="password" 
+            placeholder="留空表示不修改"
+            show-password>
+          </el-input>
         </el-form-item>
         <el-form-item v-if="isEditing">
           <el-button type="primary" @click="saveProfile">保存</el-button>
@@ -97,19 +108,47 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .user-profile {
-  padding: 20px;
-}
+  .profile-card {
+    border: none;
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 2px solid #ff6700;
 
-.profile-card {
-  max-width: 600px;
-  margin: 0 auto;
-}
+      span {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+      }
+    }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    .profile-form {
+      max-width: 500px;
+      margin: 30px auto;
+
+      .el-form-item {
+        margin-bottom: 25px;
+      }
+
+      ::v-deep .el-form-item__label {
+        font-weight: 500;
+      }
+
+      ::v-deep .el-input__inner {
+        &:disabled {
+          background-color: #f5f5f5;
+        }
+      }
+
+      .el-button {
+        padding: 12px 25px;
+      }
+    }
+  }
 }
 </style> 

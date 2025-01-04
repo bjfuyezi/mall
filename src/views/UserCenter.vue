@@ -1,7 +1,13 @@
 <template>
   <div class="user-center">
     <el-container>
-      <el-aside width="200px">
+      <el-aside width="250px">
+        <div class="user-info-card">
+          <div class="avatar">
+            <i class="el-icon-user-solid"></i>
+          </div>
+          <div class="welcome">欢迎，{{ currentUser.username }}</div>
+        </div>
         <el-menu
           :default-active="activeMenu"
           @select="handleSelect"
@@ -24,6 +30,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'UserCenter',
   data() {
@@ -31,8 +39,10 @@ export default {
       activeMenu: 'profile'
     }
   },
+  computed: {
+    ...mapGetters(['currentUser'])
+  },
   created() {
-    // 根据当前路由设置激活的菜单项
     const path = this.$route.path
     if (path.includes('address')) {
       this.activeMenu = 'address'
@@ -52,18 +62,78 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .user-center {
   padding: 20px;
-}
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 150px);
 
-.user-menu {
-  border-right: solid 1px #e6e6e6;
-  height: 100%;
-}
+  .el-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+    min-height: calc(100vh - 190px);
+  }
 
-.el-aside {
-  background-color: #fff;
-  margin-right: 20px;
+  .el-aside {
+    background-color: #fff;
+    border-right: 1px solid #e6e6e6;
+    padding: 0;
+
+    .user-info-card {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #e6e6e6;
+      background-color: #fafafa;
+
+      .avatar {
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        border-radius: 50%;
+        background-color: #ff6700;
+        color: white;
+        margin: 0 auto 15px;
+        
+        i {
+          font-size: 40px;
+        }
+      }
+
+      .welcome {
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 10px;
+      }
+    }
+
+    .user-menu {
+      border-right: none;
+
+      .el-menu-item {
+        font-size: 15px;
+        height: 50px;
+        line-height: 50px;
+
+        &:hover, &.is-active {
+          color: #ff6700;
+          background-color: #fff5f0;
+
+          i {
+            color: #ff6700;
+          }
+        }
+
+        i {
+          margin-right: 10px;
+        }
+      }
+    }
+  }
+
+  .el-main {
+    padding: 20px;
+    background-color: #fff;
+  }
 }
 </style> 

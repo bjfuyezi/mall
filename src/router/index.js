@@ -95,35 +95,35 @@ const routes = [
     path: '/shopmodel/shopManage',
     name: 'shop-management',
     component: () => import('../views/shopmodel/ShopManagementView.vue')
-
-  },{
-  path: '/user/center',
-  name: 'user-center',
-  component: () => import('@/views/UserCenter.vue'),
-  meta: { requiresAuth: true }
-},
-{
-  path: '/user/profile',
-  name: 'user-profile',
-  component: () => import('@/views/UserProfile.vue'),
-  meta: { requiresAuth: true }
-},
-{
-  path: '/user/address',
-  name: 'user-address',
-  component: () => import('@/views/UserAddress.vue'),
-  meta: { requiresAuth: true }},
+  },
+  {
+    path: '/user/center',
+    name: 'user-center',
+    component: () => import('@/views/UserCenter.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/profile',
+    name: 'user-profile',
+    component: () => import('@/views/UserProfile.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user/address',
+    name: 'user-address',
+    component: () => import('@/views/UserAddress.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/ad',
     name: 'AdManageMent',
-    component: () => import('../views/shopmodel/AdManagement.vue'),
-   }
-   
-{
-  path: '/shopmodel/addProduct',
-  name: 'addProduct',
-  component: () => import('../views/shopmodel/AddProduct.vue'),
-},
+    component: () => import('../views/shopmodel/AdManagement.vue')
+  },
+  {
+    path: '/shopmodel/addProduct',
+    name: 'addProduct',
+    component: () => import('../views/shopmodel/AddProduct.vue')
+  }
 ]
 
 const router = new VueRouter({
