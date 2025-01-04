@@ -173,7 +173,6 @@ export default {
           image: 'https://via.placeholder.com/80'
         }
       ],
-      orderid:1,
       remark: '',
       userid:2,
       productid:3,
@@ -224,31 +223,8 @@ export default {
     deleteAddress() {
       // 实现删除地址
     },
+    
     async submitOrder() {
-      if (!this.selectedAddress) {
-        this.$message.warning('请选择收货地址')
-        return
-      }
-      
-      try {
-        // 这里应该调用后端API提交订单
-        // const response = await this.$axios.post('/api/orders', orderData);
-        // const orderId = response.data.orderId;
-        
-        // 模拟订单ID
-        const orderId = 'ORDER' + Date.now();
-        
-        this.$message.success('订单提交成功');
-        this.$router.push({
-          name: 'order-success',
-          query: { orderId }
-        });
-      } catch (error) {
-        this.$message.error('订单提交失败，请重试');
-        console.error('提交订单失败:', error);
-      }
-    }
-   /* async submitOrder() {
       if (!this.selectedAddress) {
         this.$message.warning('请选择收货地址')
         return
@@ -266,14 +242,14 @@ export default {
     ('00' + now.getMilliseconds()).slice(-3)    // 毫秒（补零）
   )
   
-  const orderData = {
-    order_id:this.orderid,                   // 订单号
+  const orderData = {                 // 订单号
     user_id:this.userid,
     product_id:this.productid,
     address_id:this.addressid,
     status:this.status,
     quantity:this.orderProducts[0].quantity,
     shop_id:this.shopid,
+    price: this.finalPrice,
     /*products: this.orderProducts.map(item => ({
       productId: item.id,
       quantity: item.quantity,
@@ -288,17 +264,13 @@ export default {
     discount: this.discount,          // 优惠金额
     promotion: this.promotion,        // 促销金额
     finalPrice: this.finalPrice,      // 最终支付金额
-    remark: this.remark,             // 订单备注
+    remark: this.remark,             // 订单备注*/
   }
 
 
   // 发送订单数据到后端
   const response = await this.$axios.post('http://localhost:8081/order/create', orderData)
-  this.$message.success('订单提交成功');
-        this.$router.push({
-          name: 'order-success',
-          query: { or_bianhao }
-        });
+  
   if (response.status === 201) {
     this.$message.success('订单提交成功')
     this.$router.push({
@@ -313,7 +285,7 @@ export default {
   this.$message.error(error.message || '订单提交失败，请重试')
   console.error('提交订单失败:', error)
 }
-    }*/
+    }
   },
   created() {
     // 获取路由参数中的商品信息

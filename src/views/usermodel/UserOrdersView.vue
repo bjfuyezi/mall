@@ -91,23 +91,42 @@
       </div>
     </div>
 
-    <!-- 支付确认对话框 -->
+    <!-- 选择支付方式对话框 -->
     <el-dialog
-      title="微信支付"
+      title="选择支付方式"
+      :visible.sync="showPayMethodDialog"
+      width="300px"
+      center
+      :close-on-click-modal="false"
+    >
+      <div class="pay-method-content">
+        <el-button class="pay-method-btn" @click="selectPayMethod('wechat')">
+          <i class="el-icon-goods"></i>
+          微信支付
+        </el-button>
+        <el-button class="pay-method-btn" @click="selectPayMethod('alipay')">
+          <i class="el-icon-goods"></i>
+          支付宝支付
+        </el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 添加支付二维码对话框 -->
+    <el-dialog
+      :title="payTypeText"
       :visible.sync="showPayDialog"
       width="300px"
       center
       :close-on-click-modal="false"
     >
       <div class="pay-dialog-content">
-        <div class="qr-code">
-          <img :src="payQRCode" alt="微信支付二维码">
-        </div>
+        <p class="pay-type-text">{{ payTypeText }}扫码支付</p>
+        <div class="qr-code" ref="qrCode"></div>
         <div class="pay-amount">
           支付金额：<span class="price">¥{{ currentPayAmount }}</span>
         </div>
         <div class="pay-tips">
-          <p>请使用微信扫描二维码完成支付</p>
+          <p>请使用{{ payTypeText }}扫描二维码完成支付</p>
           <p class="small">支付完成前请不要关闭窗口</p>
         </div>
       </div>
@@ -120,6 +139,8 @@
 </template>
 
 <script>
+import QRCode from 'qrcodejs2';
+
 export default {
   name: 'UserOrdersView',
   data() {
@@ -127,7 +148,7 @@ export default {
       activeTab: 'all',
       orders: [
         {
-          id: '202403200001',
+          id: '2',
           date: '2024-03-20 15:30:00',
           status: '待付款',
           products: [
@@ -161,8 +182,11 @@ export default {
           totalAmount: 598
         }
       ],
+      showPayMethodDialog: false,
       showPayDialog: false,
-      payQRCode: 'path/to/qr-code.png', // 微信支付二维码图片路径
+      payMethod: '',
+      payTypeText: '',
+      qrCodeInstance: null,
       currentPayAmount: 0,
       currentPayOrder: null
     }
@@ -183,25 +207,59 @@ export default {
     async payOrder(order) {
       this.currentPayOrder = order;
       this.currentPayAmount = order.totalAmount;
-      
+      this.showPayMethodDialog = true;
+    },
+    async selectPayMethod(method) {
+      this.payMethod = method;
+      this.payTypeText = method === 'wechat' ? '微信' : '支付宝';
+      this.showPayMethodDialog = false;
       try {
-        // 调用后端接口获取支付二维码
+        /*// 调用后端接口获取支付链接
         const response = await this.$axios.post('/order/pay', {
-          orderId: order.id,
-          amount: order.totalAmount
+          orderId: this.currentPayOrder.id,
+          amount: this.currentPayAmount,
+          payMethod: method
         });
         
-        // 设置支付二维码
-        this.payQRCode = response.data.qrCode || 'path/to/qr-code.png';
-        
-        // 显示支付对话框
+        // 显示支付二维码
         this.showPayDialog = true;
+        this.$nextTick(() => {
+          this.generateQRCode(response.data.payUrl || 'https://example.com/pay');
+        });
         
         // 开始轮询支付状态
-        this.startCheckPayStatus(order.id);
+        this.startCheckPayStatus(this.currentPayOrder.id);*/
+        this.showPayDialog = true;
+        const testPayUrl = method === 'wechat' 
+          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.id}_${this.currentPayAmount}` 
+          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.id}&amount=${this.currentPayAmount}`;
+
+        // 在对话框显示后生成二维码，并设置不同的颜色
+        this.$nextTick(() => {
+          this.generateQRCode(testPayUrl, method);
+        });
+        
       } catch (error) {
         this.$message.error('创建支付订单失败，请重试');
         console.error('创建支付订单失败:', error);
+      }
+    },
+    generateQRCode(url, payMethod) {
+      // 清除已存在的二维码
+      if (this.qrCodeInstance) {
+        this.qrCodeInstance.clear();
+      }
+      const qrContainer = this.$refs.qrCode;
+      if (qrContainer) {
+        qrContainer.innerHTML = '';
+        this.qrCodeInstance = new QRCode(qrContainer, {
+          text: url,
+          width: 200,
+          height: 200,
+          colorDark: payMethod === 'wechat' ? '#2C8722' : '#00A0E9',  // 微信绿色 vs 支付宝蓝色
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
       }
     },
     cancelPay() {
@@ -217,11 +275,21 @@ export default {
     async confirmPay() {
       try {
         // 调用后端验证支付状态
-        const response = await this.$axios.post('/order/pay', {
-          orderId: this.currentPayOrder.id
+        const response = await this.$axios.post('http://localhost:8081/order/pay', {
+          order_id: this.currentPayOrder.id,
+          payment_method:this.payTypeText
         });
-
+        /*
         if (response.data.paid) {
+          this.$message.success('支付成功！');
+          this.showPayDialog = false;
+          // 更新订单状态
+          this.currentPayOrder.status = '待发货';
+          this.stopCheckPayStatus();
+        } else {
+          this.$message.warning('未检测到支付，请确认是否已完成支付');
+        }*/
+        if (response.status === 201) {
           this.$message.success('支付成功！');
           this.showPayDialog = false;
           // 更新订单状态
@@ -288,8 +356,11 @@ export default {
     }
   },
   beforeDestroy() {
-    // 组件销毁前清除定时器
     this.stopCheckPayStatus();
+    // 清除二维码实例
+    if (this.qrCodeInstance) {
+      this.qrCodeInstance.clear();
+    }
   }
 }
 </script>
@@ -441,19 +512,47 @@ export default {
   }
 }
 
+.pay-method-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px 0;
+
+  .pay-method-btn {
+    height: 50px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    i {
+      font-size: 20px;
+    }
+  }
+}
+
 .pay-dialog-content {
   text-align: center;
   padding: 20px 0;
+
+  .pay-type-text {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 20px;
+  }
 
   .qr-code {
     width: 200px;
     height: 200px;
     margin: 0 auto 20px;
-    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+      max-width: 100%;
+      max-height: 100%;
     }
   }
 
