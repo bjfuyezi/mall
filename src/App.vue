@@ -56,7 +56,7 @@
             <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
             <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
             <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
-            <router-link to="/shopmodel/addProduct" class="nav-item">添加商品</router-link>
+            <router-link to="/shopmodel/productManage" class="nav-item">管理商品</router-link>
           </div>
         </div>
       </div>
