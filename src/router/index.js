@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
+import AdminView from '../views/admin/AdminView.vue'
 
 Vue.use(VueRouter)
 
@@ -128,6 +129,32 @@ const routes = [
     path: '/forget-password',
     name: 'forget-password',
     component: () => import('../views/ForgetPasswordView.vue')
+  },
+  {
+    path: '/admin',
+    component: AdminView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        redirect: 'dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/DashboardView.vue')
+      },
+      {
+        path: 'shop-audit',
+        name: 'ShopAudit',
+        component: () => import('../views/admin/ShopAuditView.vue')
+      },
+      {
+        path: 'product-audit',
+        name: 'ProductAudit',
+        component: () => import('../views/admin/ProductAuditView.vue')
+      }
+    ]
   }
 ]
 
@@ -146,6 +173,13 @@ router.beforeEach((to, from, next) => {
         path: '/login',
         query: { redirect: to.fullPath }
       });
+    } else if (to.matched.some(record => record.meta.requiresAdmin)) {
+      // 检查是否是管理员
+      if (store.state.user.role !== 'admin') {
+        next('/');
+      } else {
+        next();
+      }
     } else {
       next();
     }

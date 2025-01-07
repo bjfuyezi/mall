@@ -79,40 +79,30 @@ export default {
         formData.append('username', this.loginForm.username);
         formData.append('password', this.loginForm.password);
 
-        // 添加日志查看登录请求
-        console.log('Sending login request with:', {
-          username: this.loginForm.username,
-          password: this.loginForm.password
+        const response = await axios.post('http://localhost:8081/users/login', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         });
 
-        const loginResponse = await axios.post('http://localhost:8081/users/login', formData);
-        console.log('Login response:', loginResponse.data);
-
-        if (loginResponse.data.status === 'success') {
-          // 直接从登录响应中获取用户ID
-          const userId = loginResponse.data.user_id;
-          console.log('Got user_id:', userId);
-
-          // 获取用户详细信息
-          const userResponse = await axios.get(`http://localhost:8081/users/${userId}`);
-          console.log('User details response:', userResponse.data);
-
-          if (userResponse.data.status === 'success' && userResponse.data.data) {
-            // 保存用户信息到 Vuex
-            this.$store.commit('setUser', userResponse.data.data);
-            this.$message.success('登录成功');
+        if (response.data.status === 'success') {
+          const userData = response.data.user;
+          this.$store.commit('setUser', userData);
+          this.$message.success('登录成功');
+          
+          // 根据用户角色跳转
+          if (userData.role === 'admin') {
+            this.$router.push('/admin');
+          } else {
             const redirectPath = this.$route.query.redirect || '/';
             this.$router.push(redirectPath);
-          } else {
-            this.$message.error('获取用户信息失败');
           }
         } else {
-          this.$message.error(loginResponse.data.message || '登录失败');
+          this.$message.error(response.data.message || '登录失败');
         }
       } catch (error) {
         console.error('Login error:', error);
-        const errorMessage = error.response?.data?.message || '服务器错误';
-        this.$message.error(errorMessage);
+        this.$message.error(error.response?.data?.message || '服务器错误');
       }
     }
   }
