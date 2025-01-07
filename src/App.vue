@@ -1,87 +1,91 @@
 <template>
   <div id="app">
-    <el-header>
-      <div class="header-container">
-        <!-- 左侧 Logo -->
-        <router-link to="/" class="logo">
-          商城
-        </router-link>
-
-        <!-- 中间搜索框 -->
-        <div class="search-box">
-          <el-input
-            placeholder="请输入商品名称"
-            v-model="searchKeyword"
-            class="search-input"
-          >
-            <el-button slot="append" icon="el-icon-search" @click="handleSearch">搜索</el-button>
-          </el-input>
-        </div>
-
-        <!-- 右侧用户操作区 -->
-        <div class="user-actions">
-          <router-link to="/user/orders" class="action-item">
-            <i class="el-icon-s-order"></i>
-            <span>我的订单</span>
+    <!-- 只在非管理员页面显示导航栏 -->
+    <template v-if="!isAdminRoute">
+      <el-header>
+        <div class="header-container">
+          <!-- Logo -->
+          <router-link to="/" class="logo">
+            商城
           </router-link>
-          <router-link to="/cart" class="action-item">
-            <i class="el-icon-shopping-cart-2"></i>
-            <span>购物车</span>
-          </router-link>
-          <template v-if="!isAuthenticated">
-            <router-link to="/login" class="action-item">登录</router-link>
-            <router-link to="/register" class="action-item">注册</router-link>
-          </template>
-          <el-dropdown v-else @command="handleCommand" class="action-item">
-            <span class="el-dropdown-link">
-              {{ currentUser.username }}<i class="el-icon-arrow-down el-icon--right"></i>
-            </span>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
-              <el-dropdown-item command="orders">我的订单</el-dropdown-item>
-              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
-        </div>
-      </div>
 
-      <!-- 下方导航菜单 -->
-      <div class="nav-menu">
-        <div class="nav-container">
-          <div class="nav-left">
-            <router-link to="/" class="nav-item">首页</router-link>
-            <router-link to="/new" class="nav-item">新品</router-link>
-            <router-link to="/hot" class="nav-item">热卖</router-link>
-            <router-link to="/promotion" class="nav-item">优惠</router-link>
-            <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
-            <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
-            <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
-            <router-link to="/shopmodel/productManage" class="nav-item">管理商品</router-link>
+          <!-- 搜索框 -->
+          <div class="search-box">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索商品"
+              class="search-input"
+            >
+              <el-button slot="append" icon="el-icon-search"></el-button>
+            </el-input>
+          </div>
+
+          <!-- 用户操作区 -->
+          <div class="user-actions">
+            <template v-if="isAuthenticated">
+              <el-dropdown @command="handleCommand">
+                <span class="el-dropdown-link">
+                  {{ username }}<i class="el-icon-arrow-down el-icon--right"></i>
+                </span>
+                <el-dropdown-menu slot="dropdown">
+                  <el-dropdown-item command="userCenter">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+                  <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+            </template>
+            <template v-else>
+              <router-link to="/login" class="action-item">
+                <i class="el-icon-user"></i>
+                登录
+              </router-link>
+            </template>
+            <router-link to="/cart" class="action-item">
+              <i class="el-icon-shopping-cart-2"></i>
+              购物车
+            </router-link>
           </div>
         </div>
-      </div>
-    </el-header>
+
+        <!-- 导航菜单 -->
+        <nav class="nav-menu">
+          <div class="nav-container">
+            <div class="nav-left">
+              <router-link to="/" class="nav-item">首页</router-link>
+              <router-link to="/new" class="nav-item">新品</router-link>
+              <router-link to="/hot" class="nav-item">热卖</router-link>
+              <router-link to="/promotion" class="nav-item">优惠</router-link>
+            </div>
+          </div>
+        </nav>
+      </el-header>
+    </template>
+
+    <!-- 路由视图 -->
     <router-view/>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-
 export default {
   name: 'App',
   data() {
     return {
-      searchKeyword: ''
+      searchQuery: ''
     }
   },
   computed: {
-    ...mapGetters(['isAuthenticated', 'currentUser'])
+    isAuthenticated() {
+      return this.$store.getters.isAuthenticated
+    },
+    username() {
+      return this.$store.state.user?.username || ''
+    },
+    isAdminRoute() {
+      return this.$route.path.startsWith('/admin')
+    }
   },
   methods: {
-    handleSearch() {
-      console.log('搜索:', this.searchKeyword)
-    },
     handleCommand(command) {
       switch(command) {
         case 'userCenter':
@@ -223,3 +227,4 @@ export default {
   padding-top: 110px;
 }
 </style>
+
