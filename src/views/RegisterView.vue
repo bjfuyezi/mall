@@ -15,9 +15,9 @@
           <button 
             class="send-code-btn"
             @click.prevent="sendVerificationCode"
-            :disabled="!registerForm.email || sendingCode"
+            :disabled="!registerForm.email || isCodeSent"
           >
-            {{ sendingCode ? '发送中...' : '发送验证码' }}
+            {{ codeButtonText }}
           </button>
         </div>
 
@@ -50,7 +50,7 @@
             type="password" 
             id="password" 
             v-model="registerForm.password"
-            placeholder="请输入密码"
+            placeholder="密码必须包含大小写字母和数字，且长度至少为8位"
           >
         </div>
 
@@ -105,50 +105,104 @@ export default {
         agreement: false,
       },
       sendingCode: false,
+      isCodeSent: false,
+      countdown: 60,
+      timer: null,
+      passwordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
+      showPasswordTip: false
     };
   },
+  computed: {
+    codeButtonText() {
+      if (this.sendingCode) return '发送中...';
+      if (this.isCodeSent) return `${this.countdown}秒后重试`;
+      return '发送验证码';
+    }
+  },
   methods: {
-    sendVerificationCode() {
-        this.sendingCode = true;
-        axios.post('http://localhost:8081/users/sendCode', { email: this.registerForm.email })
-            .then(() => {
-                this.$message.success('验证码已发送');
-            })
-            .catch(() => {
-                this.$message.error('验证码发送失败');
-            })
-            .finally(() => {
-                this.sendingCode = false;
-            });
+    async sendVerificationCode() {
+      this.sendingCode = true;
+      try {
+        await axios.post('http://localhost:8081/users/sendCode', { email: this.registerForm.email });
+        this.$message.success('验证码已发送');
+        this.startCountdown();
+      } catch (error) {
+        this.$message.error('验证码发送失败');
+      } finally {
+        this.sendingCode = false;
+      }
+    },
+
+    startCountdown() {
+      this.isCodeSent = true;
+      this.countdown = 60;
+      if (this.timer) {
+        clearInterval(this.timer);
+      }
+      this.timer = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          this.isCodeSent = false;
+          clearInterval(this.timer);
+        }
+      }, 1000);
+    },
+
+    validatePassword(password) {
+      return this.passwordRegex.test(password);
     },
 
     handleRegister() {
-        // 校验注册表单后提交注册请求
-        if (this.registerForm.password !== this.registerForm.confirmPassword) {
-            this.$message.error('两次输入的密码不一致');
-            return;
-        }
+      // 校验密码格式
+      if (!this.validatePassword(this.registerForm.password)) {
+        this.$message.error('密码必须包含大小写字母和数字，且长度至少为8位');
+        return;
+      }
 
-        // Send the registration data with 'code' as a query parameter
-        axios.post(`http://localhost:8081/users/register?code=${this.registerForm.verificationCode}`, this.registerForm)
-            .then(() => {
-                this.$message.success('注册成功，请登录');
-                this.$router.push('/login');
-            })
-            .catch((error) => {
-                const errorMessage = error.response.data;
-                if (errorMessage.includes('验证码错误')) {
-                    this.$message.error('验证码错误，请重新输入');
-                } else if (errorMessage.includes('用户名已存在')) {
-                    this.$message.error('用户名已存在，请选择其他用户名');
-                } else if (errorMessage.includes('邮箱已存在')) {
-                    this.$message.error('该邮箱已被注册，请选择其他邮箱');
-                } else {
-                    this.$message.error('注册失败，请稍后重试');
-                }
-            });
+      // 校验两次密码是否一致
+      if (this.registerForm.password !== this.registerForm.confirmPassword) {
+        this.$message.error('两次输入的密码不一致');
+        return;
+      }
+
+      // 发送注册请求
+      axios.post(`http://localhost:8081/users/register?code=${this.registerForm.verificationCode}`, this.registerForm)
+        .then(() => {
+          this.$message.success('注册成功，请登录');
+          this.$router.push('/login');
+        })
+        .catch((error) => {
+          const errorMessage = error.response.data;
+          if (errorMessage.includes('验证码错误')) {
+            this.$message.error('验证码错误，请重新输入');
+          } else if (errorMessage.includes('用户名已存在')) {
+            this.$message.error('用户名已存在，请选择其他用户名');
+          } else if (errorMessage.includes('邮箱已存在')) {
+            this.$message.error('该邮箱已被注册，请选择其他邮箱');
+          } else {
+            this.$message.error('注册失败，请稍后重试');
+          }
+        });
     }
-},
+  },
+  watch: {
+    'registerForm.password'(newVal) {
+      if (newVal && !this.validatePassword(newVal)) {
+        if (!this.showPasswordTip) {
+          this.$message.warning('密码必须包含大小写字母和数字，且长度至少为8位');
+          this.showPasswordTip = true;
+        }
+      } else {
+        this.showPasswordTip = false;
+      }
+    }
+  },
+  beforeDestroy() {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+  }
 };
 </script>
 
@@ -210,12 +264,12 @@ export default {
       border-radius: 4px;
       cursor: pointer;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: #f85000;
       }
 
       &:disabled {
-        background-color: #ddd;
+        background-color: #ccc;
         cursor: not-allowed;
       }
     }

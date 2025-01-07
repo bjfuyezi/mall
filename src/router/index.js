@@ -123,6 +123,11 @@ const routes = [
     path: '/shopmodel/addProduct',
     name: 'addProduct',
     component: () => import('../views/shopmodel/AddProduct.vue')
+  },
+  {
+    path: '/forget-password',
+    name: 'forget-password',
+    component: () => import('../views/ForgetPasswordView.vue')
   }
 ]
 

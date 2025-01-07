@@ -75,22 +75,31 @@ export default {
   methods: {
     async handleLogin() {
       try {
-        // 创建登录参数
         const formData = new FormData();
         formData.append('username', this.loginForm.username);
         formData.append('password', this.loginForm.password);
 
-        // 登录请求
-        const loginResponse = await axios.post('http://localhost:8081/users/login', formData);
-        
-        if (loginResponse.data.status === 'success') {
-          // 登录成功后获取用户详细信息并保存到 Vuex
-          const success = await this.$store.dispatch('login', {
-            username: this.loginForm.username,
-            password: this.loginForm.password
-          });
+        // 添加日志查看登录请求
+        console.log('Sending login request with:', {
+          username: this.loginForm.username,
+          password: this.loginForm.password
+        });
 
-          if (success) {
+        const loginResponse = await axios.post('http://localhost:8081/users/login', formData);
+        console.log('Login response:', loginResponse.data);
+
+        if (loginResponse.data.status === 'success') {
+          // 直接从登录响应中获取用户ID
+          const userId = loginResponse.data.user_id;
+          console.log('Got user_id:', userId);
+
+          // 获取用户详细信息
+          const userResponse = await axios.get(`http://localhost:8081/users/${userId}`);
+          console.log('User details response:', userResponse.data);
+
+          if (userResponse.data.status === 'success' && userResponse.data.data) {
+            // 保存用户信息到 Vuex
+            this.$store.commit('setUser', userResponse.data.data);
             this.$message.success('登录成功');
             const redirectPath = this.$route.query.redirect || '/';
             this.$router.push(redirectPath);
@@ -101,6 +110,7 @@ export default {
           this.$message.error(loginResponse.data.message || '登录失败');
         }
       } catch (error) {
+        console.error('Login error:', error);
         const errorMessage = error.response?.data?.message || '服务器错误';
         this.$message.error(errorMessage);
       }
