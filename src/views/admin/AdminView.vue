@@ -14,6 +14,18 @@
             <i class="el-icon-s-home"></i>
             <span>控制台</span>
           </el-menu-item>
+          <el-menu-item index="coupons">
+            <i class="el-icon-s-ticket"></i>
+            <span>优惠券管理</span>
+          </el-menu-item>
+          <el-menu-item index="ads">
+            <i class="el-icon-s-promotion"></i>
+            <span>广告管理</span>
+          </el-menu-item>
+          <el-menu-item index="users">
+            <i class="el-icon-user"></i>
+            <span>用户管理</span>
+          </el-menu-item>
           
           <el-submenu index="shop">
             <template slot="title">
@@ -49,7 +61,7 @@
         </el-header>
 
         <el-main>
-          <router-view></router-view>
+          <router-view />
         </el-main>
       </el-container>
     </el-container>
@@ -80,6 +92,18 @@ export default {
         case 'product-audit':
           this.pageTitle = '商品审核';
           this.$router.push('/admin/product-audit');
+          break;
+        case 'coupons':
+          this.pageTitle = '优惠券管理';
+          this.$router.push('/admin/coupons');
+          break;
+        case 'ads':
+          this.pageTitle = '广告管理';
+          this.$router.push('/admin/ads');
+          break;
+        case 'users':
+          this.pageTitle = '用户管理';
+          this.$router.push('/admin/users');
           break;
       }
     },

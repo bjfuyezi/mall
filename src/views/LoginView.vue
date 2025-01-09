@@ -89,7 +89,8 @@ export default {
           
           this.setUser(userData);
           this.$message.success('登录成功');
-          
+          console.log('Login response:', userData);
+
           // 根据用户角色跳转
           if (userData.role === 'admin') {
             this.$router.push('/admin'); // 确保跳转到管理员页面
@@ -111,7 +112,7 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" scoped>  
 .login-page {
   min-height: calc(100vh - 120px); // 减去头部导航的高度
   background-color: #f5f5f5;

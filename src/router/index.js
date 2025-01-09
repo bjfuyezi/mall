@@ -3,6 +3,8 @@ import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
 import AdminView from '../views/admin/AdminView.vue'
+import CouponManagement from '../views/admin/CouponManagement.vue'
+import UserManagement from '../views/admin/UserManagement.vue'
 
 Vue.use(VueRouter)
 
@@ -153,6 +155,24 @@ const routes = [
         path: 'product-audit',
         name: 'ProductAudit',
         component: () => import('../views/admin/ProductAuditView.vue')
+      },
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: UserManagement,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'coupons',
+        name: 'CouponManagement',
+        component: CouponManagement,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'ads',
+        name: 'AdManagement',
+        component: () => import('../views/admin/AdManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   }
