@@ -23,6 +23,11 @@ export default new Vuex.Store({
       } else {
         localStorage.removeItem('user');
       }
+    },
+    clearUser(state) {
+      state.user = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('user');
     }
   },
   actions: {
@@ -72,7 +77,7 @@ export default new Vuex.Store({
       }
     },
     logout({ commit }) {
-      commit('setUser', null);
+      commit('clearUser');
     },
     updateUserProfile({ commit, state }, updatedProfile) {
       const updatedUser = { ...state.user, ...updatedProfile };

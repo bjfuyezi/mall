@@ -1,11 +1,14 @@
 <template>
   <div class="apply-page">
   <!-- 根据 shop_status 显示不同的内容 -->
-  <div v-if="statusMessage" class="status-message">
+  <div v-if="statusMessage && !statusMessage.includes('打回')" class="status-message">
     <p>{{ statusMessage }}</p>
   </div>
 
   <div v-else class="apply-container">
+      <div v-if="statusMessage.includes('打回')" class="status-message">
+        <p>{{ statusMessage }}</p>
+      </div>
       <h2>店铺信息</h2>
       <form class="apply-form" @submit.prevent="handleSubmit">
         <!-- 店铺名称 -->
@@ -116,7 +119,7 @@ export default {
       }
     };
   },
-  mounted() {
+  created() {
     this.checkShopStatus();
   },
   methods: {
@@ -138,7 +141,13 @@ export default {
               this.statusMessage = "";
             } else if  (status === 'almost shop') {
               this.statusMessage = "您已成为商家，请前往【店铺管理】进行操作！";
-            } else {
+            } else {    // 若为被打回，显示之前的信息
+              const formResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
+              if (formResponse.data) {
+                this.form.shop_name = formResponse.data.shop_name;
+                this.form.shop_description = formResponse.data.shop_description;
+                this.form.province = formResponse.data.location;
+              }
               this.statusMessage = status;
             }
           } else {
@@ -197,12 +206,12 @@ export default {
           alert('申请成功');
           // 提交后刷新页面
           window.location.reload(); // 刷新页面，重新加载该页面
-        } else {
-          alert('申请失败，请稍后再试');
+        } else if (response.status === 409){
+          alert('店铺名称已被使用，请更换！');
         }
       } catch (error) {
-        console.error('提交失败:', error);
-        alert('发生错误，请稍后再试');
+        if (error.status === 409 ) alert('店铺名称已被使用，请更换！');
+        else alert('发生错误，请稍后再试');
       }
     }
   }

@@ -13,13 +13,13 @@
 
       <div class="address-items">
         <el-row :gutter="20">
-          <el-col :span="24" v-for="address in addresses" :key="address.addressId">
+          <el-col :span="24" v-for="address in addresses" :key="address.address_id">
             <el-card shadow="hover" class="address-item">
               <div class="address-content">
                 <div class="address-main">
-                  <div class="location" v-if="address.addressContent">
+                  <div class="location" v-if="address.address_content">
                     <i class="el-icon-location"></i>
-                    {{ address.province }} {{ address.addressContent }}
+                    {{ address.province }} {{ address.address_content }}
                   </div>
                   <div class="phone" v-if="address.phone">
                     <i class="el-icon-phone"></i>
@@ -27,14 +27,14 @@
                   </div>
                 </div>
                 <div class="address-tags">
-                  <el-tag v-if="address.isDefault === 1" type="success" size="small">默认地址</el-tag>
+                  <el-tag v-if="address.is_default === 1" type="success" size="small">默认地址</el-tag>
                 </div>
               </div>
               <div class="address-actions">
                 <el-button type="text" @click="handleEdit(address)">编辑</el-button>
                 <el-button type="text" @click="handleDelete(address)" class="delete-btn">删除</el-button>
                 <el-button 
-                  v-if="address.isDefault !== 1"
+                  v-if="address.is_default !== 1"
                   type="text" 
                   @click="setDefault(address)">
                   设为默认
@@ -49,8 +49,8 @@
     <!-- 添加/编辑地址对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible">
       <el-form :model="addressForm" :rules="rules" ref="addressForm" label-width="100px">
-        <el-form-item label="详细地址" prop="addressContent">
-          <el-input v-model="addressForm.addressContent" 
+        <el-form-item label="详细地址" prop="address_content">
+          <el-input v-model="addressForm.address_content" 
                     type="textarea" 
                     :rows="2"
                     placeholder="请输入详细地址信息，如道路、门牌号、小区、楼栋号、单元等">
@@ -63,7 +63,7 @@
           <el-input v-model="addressForm.phone" placeholder="请输入手机号码"></el-input>
         </el-form-item>
         <el-form-item label="默认地址">
-          <el-switch v-model="addressForm.isDefault" :active-value="1" :inactive-value="0"></el-switch>
+          <el-switch v-model="addressForm.is_default" :active-value="1" :inactive-value="0"></el-switch>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex';
 
 export default {
   name: 'UserAddress',
@@ -85,16 +85,16 @@ export default {
       dialogVisible: false,
       dialogTitle: '添加新地址',
       addressForm: {
-        addressId: null,
-        userId: null,
-        addressContent: '',
+        address_id: null,
+        user_id: null,
+        address_content: '',
         province: '',
         phone: '',
-        isDefault: 0
+        is_default: 0
       },
       isEdit: false,
       rules: {
-        addressContent: [
+        address_content: [
           { required: true, message: '请输入详细地址', trigger: 'blur' },
           { min: 5, message: '地址长度至少5个字符', trigger: 'blur' }
         ],
@@ -106,7 +106,7 @@ export default {
           { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
         ]
       }
-    }
+    };
   },
   computed: {
     ...mapState({
@@ -117,11 +117,11 @@ export default {
   methods: {
     async loadAddresses() {
       try {
-        console.log('Loading addresses for userId:', this.userId);
+        console.log('Loading addresses for user_id:', this.userId);
         const response = await fetch(`http://localhost:8081/addresses/user/${this.userId}`);
         const data = await response.json();
         console.log('Received addresses data:', data);
-        
+
         if (data.status === 'success' && Array.isArray(data.data)) {
           this.addresses = data.data;
           console.log('Updated addresses:', this.addresses);
@@ -138,12 +138,12 @@ export default {
       this.isEdit = false;
       this.dialogTitle = '添加新地址';
       this.addressForm = {
-        addressId: null,
-        userId: null,
-        addressContent: '',
+        address_id: null,
+        user_id: this.userId, // 自动填写 user_id
+        address_content: '',
         province: '',
         phone: '',
-        isDefault: 0
+        is_default: 0
       };
       this.dialogVisible = true;
     },
@@ -155,7 +155,7 @@ export default {
     },
     async handleDelete(row) {
       try {
-        const response = await fetch(`http://localhost:8081/addresses/delete/${row.addressId}`, {
+        const response = await fetch(`http://localhost:8081/addresses/delete/${row.address_id}`, {
           method: 'DELETE'
         });
         const data = await response.json();
@@ -171,7 +171,7 @@ export default {
     },
     async setDefault(row) {
       try {
-        const response = await fetch(`http://localhost:8081/addresses/default/${row.addressId}?userId=${this.userId}`, {
+        const response = await fetch(`http://localhost:8081/addresses/default/${row.address_id}?user_id=${this.userId}`, {
           method: 'PUT'
         });
         const data = await response.json();
@@ -191,10 +191,6 @@ export default {
           try {
             const url = this.isEdit ? 'http://localhost:8081/addresses/update' : 'http://localhost:8081/addresses/add';
             const method = this.isEdit ? 'PUT' : 'POST';
-            
-            if (!this.isEdit) {
-              this.addressForm.userId = this.userId;
-            }
 
             console.log('提交的地址数据：', this.addressForm);
 
@@ -205,7 +201,7 @@ export default {
               },
               body: JSON.stringify(this.addressForm)
             });
-            
+
             const data = await response.json();
             if (data.status === 'success') {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功');
@@ -228,7 +224,7 @@ export default {
   created() {
     this.loadAddresses();
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>

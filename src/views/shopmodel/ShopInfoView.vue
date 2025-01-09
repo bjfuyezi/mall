@@ -3,7 +3,12 @@
     <!-- 顶部状态栏 -->
     <div class="status-bar">
       <span class="status-message">
-        {{ shopStatus === 'closed' ? '您的店铺已歇业' : '您的店铺正在营业中' }}
+        <div v-if="shopStatus === 'suspended'">
+          <p>您的申请被打回，原因是：</p> {{ reason }}
+        </div>
+        <div v-else>
+          {{ shopStatus === 'closed' ? '您的店铺已歇业' : '您的店铺正在营业中' }}
+        </div>
       </span>
       <div class="action-buttons">
         <button @click="toggleShopStatus" :disabled="isProcessing">
@@ -51,7 +56,7 @@
           <input v-model="shopInfo.level" disabled type="text" id="level"/>
         </div>
         <div class="form-group">
-          <label>营业额</label>
+          <label>店铺营业额</label>
           <input v-model="shopInfo.salary" disabled type="text" id="salary"/>
         </div>
         <div class="form-group">
@@ -78,6 +83,7 @@ export default {
       shopStatus: '', 
       isProcessing: false, // 用于防止重复点击
       picture: null,
+      reason: '',
       url: '',
       shopInfo: {
         shop_id: '',
@@ -96,19 +102,20 @@ export default {
       return this.shopStatus === 'waiting' || this.isProcessing;
     }
   },
-  mounted() {
+  created() {
     // 页面加载时获取店铺信息
     this.fetchShopDetails();
   },
   methods: {
   // 获取店铺信息
-    fetchShopDetails() {
+    async fetchShopDetails() {
       this.isProcessing = true;
-      axios.post('http://localhost:8081/shop/getByUserId', {id:this.user_id}) // 后端接口地址
-        .then(response => {
-          // 假设后端返回的数据结构为 response.data
+      try {
+        const response = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
+        if ( response.data ) {
           const shopData = response.data;
           this.shopStatus = shopData.status;
+          if (shopData.reason) this.reason = shopData.reason;
           this.shopInfo = {
             shop_id: shopData.shop_id,
             shopName: shopData.shop_name,
@@ -118,32 +125,26 @@ export default {
             level: shopData.level,
             salary: shopData.salary
           };
-          // 获取营业额
-          axios.post('http://localhost:8081/product/getSalenumByShopId', {id: shopData.shop_id})
-            .then(response => {
-              this.shopInfo.salenum = response.data;
-            })
-            .catch(error => {
-              console.error('获取营业额失败', error);
-          });
+            // 获取总销量
+          const saleResponse = await axios.post('http://localhost:8081/product/getSalenumByShop_id', {id: shopData.shop_id});
+          if ( saleResponse.data != null ) {
+            this.shopInfo.salenum = saleResponse.data;
+          } 
           // 根据 picture_id 获取图片
           const pictureId = shopData.picture_id; // 假设图片ID是返回数据中的字段
           if (pictureId) {
-            axios.post('http://localhost:8081/pic/getUrl', {id: pictureId})
-              .then(response => {
-                this.url = response.data;
-              })
-              .catch(error => {
-                console.error('获取图片失败', error);
-              });
+            const pictureResponse = await axios.post('http://localhost:8081/pic/getUrl', {id: pictureId});
+            if ( pictureResponse.data ) {
+                this.url = pictureResponse.data;
+            }
           }
-        })
-        .catch(error => {
-          console.error('获取店铺信息失败:', error);
-        })
-        .finally(() => {
-          this.isProcessing = false;
-        });
+        }
+      } catch (error) {
+        console.error('提交失败:', error);
+        alert('发生错误，请稍后再试');
+      } finally {
+        this.isProcessing = false;
+      }
     },
     // 切换店铺状态（开业/歇业）
     toggleShopStatus() {

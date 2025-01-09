@@ -92,7 +92,8 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      shop_id: 7,     // session获取
+      user_id: 1,
+      shop_id: '',     // session获取
       pictures_id: '',  // 存储图片的id
       product: {
         name: '',
@@ -109,7 +110,23 @@ export default {
       ],
     };
   },
+  created() {
+    // 页面加载时获取店铺信息
+    this.fetchShopIdByUserId();
+  },
   methods: {
+    async fetchShopIdByUserId() {
+      try {
+        const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
+        if ( shopResponse.data ) {
+          const shopData = shopResponse.data;
+          this.shop_id = shopData.shop_id;
+        }
+      } catch (error) {
+        console.error('获取店铺信息失败:', error);
+        alert('获取店铺信息失败');
+      }
+    },
     addStock() {
       if (this.product.stock.length < 5) {
         this.product.stock.push({ flavor: '', quantity: 0 });

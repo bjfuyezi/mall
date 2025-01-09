@@ -57,6 +57,11 @@
             <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
             <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
             <router-link to="/shopmodel/productManage" class="nav-item">管理商品</router-link>
+
+            <!-- 管理员页面按钮 -->
+            <template v-if="isAuthenticated && currentUser.role === 'admin'">
+              <router-link to="/admin" class="nav-item">管理员页面</router-link>
+            </template>
           </div>
         </div>
       </div>

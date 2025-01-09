@@ -41,9 +41,10 @@
             placeholder="选择商品状态"
             style="width: 200px; margin-right: 10px;">
             <el-option label="全部" value="all" />
-            <el-option label="售卖中" value="selling" />
-            <el-option label="已下架/售罄" value="sold_out" />
-            <el-option label="审核中" value="pending" />
+            <el-option label="售卖中" value="sale" />
+            <el-option label="已下架/售罄" value="empty" />
+            <el-option label="审核中" value="waiting" />
+            <el-option label="审核未通过" value="suspended" />
           </el-select>
         </div>
       </div>
@@ -53,6 +54,7 @@
         <el-table :data="filteredProducts" style="width: 100%">
           <el-table-column prop="name" label="商品名称" />
           <el-table-column prop="category" label="类别" />
+          <el-table-column prop="price" label="定价" />
   
           <!-- 库存显示为口味-数量 -->
           <el-table-column label="库存">
@@ -71,8 +73,11 @@
           <el-table-column label="操作">
             <template slot-scope="scope">
               <el-button @click="deleteProduct(scope.row.id)" size="small" type="danger">删除</el-button>
-              <el-button @click="updateStock(scope.row.id)" size="small" type="warning">更新库存</el-button>
+              <el-button v-if="scope.row.status === 'sale'" @click="emptyProduct(scope.row.id)" size="small" type="warning">下架</el-button>
+              <el-button v-if="scope.row.status === 'empty'" @click="saleProduct(scope.row.id)" size="small" type="warning">上架</el-button>
+              <el-button @click="updateStock(scope.row.id)" size="small" type="info">更新库存</el-button>
               <el-button @click="showProductDetails(scope.row.id)" size="small" type="info">详情</el-button>
+              <el-button v-if="scope.row.status != 'waiting'" @click="updateProduct(scope.row.id)" size="small" type="info">编辑</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -91,12 +96,16 @@
   
   <script>
   import AddProductForm from './AddProduct.vue';
+  import axios from 'axios';
+
   export default {
     components: {
         AddProductForm
     },
     data() {
       return {
+        user_id: 1,   // session获取
+        shop_id: '',
         showAddProductDialog: false,  // 控制弹窗的显示
         searchKeyword: '',
         searchCategory: '',
@@ -108,35 +117,54 @@
             id: 1,
             name: '苹果',
             category: '生鲜食品',
+            price: '19.9',
             stock: [
               { flavor: '甜味', quantity: 30 },
               { flavor: '酸味', quantity: 50 }
             ],
             description: '新鲜苹果，口感极佳。',
-            status: 'selling'
-          },
-          {
-            id: 2,
-            name: '薯片',
-            category: '零食小吃',
-            stock: [
-              { flavor: '海盐', quantity: 20 },
-              { flavor: '烧烤', quantity: 40 }
-            ],
-            description: '脆脆的薯片，搭配丰富的口味。',
-            status: 'sold_out'
-          },
-          {
-            id: 3,
-            name: '葡萄酒',
-            category: '酒水饮料',
-            stock: [
-              { flavor: '干型', quantity: 15 },
-              { flavor: '甜型', quantity: 25 }
-            ],
-            description: '高品质葡萄酒，适合各种场合。',
-            status: 'pending'
+            status: 'sale',
+            picture_id: [],
+            created_time: '',
+            updated_time: '',
+            location: '',
+            notice: '',
+            unit: '',
+            salenum: ''
           }
+          // {
+          //   id: 1,
+          //   name: '苹果',
+          //   category: '生鲜食品',
+          //   stock: [
+          //     { flavor: '甜味', quantity: 30 },
+          //     { flavor: '酸味', quantity: 50 }
+          //   ],
+          //   description: '新鲜苹果，口感极佳。',
+          //   status: 'selling'
+          // },
+          // {
+          //   id: 2,
+          //   name: '薯片',
+          //   category: '零食小吃',
+          //   stock: [
+          //     { flavor: '海盐', quantity: 20 },
+          //     { flavor: '烧烤', quantity: 40 }
+          //   ],
+          //   description: '脆脆的薯片，搭配丰富的口味。',
+          //   status: 'sold_out'
+          // },
+          // {
+          //   id: 3,
+          //   name: '葡萄酒',
+          //   category: '酒水饮料',
+          //   stock: [
+          //     { flavor: '干型', quantity: 15 },
+          //     { flavor: '甜型', quantity: 25 }
+          //   ],
+          //   description: '高品质葡萄酒，适合各种场合。',
+          //   status: 'pending'
+          // }
         ],
         currentPage: 1,
         pageSize: 15,
@@ -152,14 +180,29 @@
     },
     computed: {
         // 过滤后的商品列表
-        filteredProducts() {
+      filteredProducts() {
         if (this.productStatus === 'all') {
             return this.products;
         }
         return this.products.filter(product => product.status === this.productStatus);
-        }
+      }
+    },
+    created() {
+      console.log('商品数据加载完成');
+      this.getProducts();
     },
     methods: {
+      async getProducts() {
+        const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
+        if ( shopResponse.data != null ) {
+          this.shop_id = shopResponse.data.shop_id;
+        }
+        const proResponse = await axios.post('http://localhost:8081/product/getAllByShop_id', {id:this.shop_id});
+        if ( proResponse.data != null ) {
+          console.log("products读出来了，还没扔列表里");
+          console.log(proResponse.data);
+        }
+      },
       // 模拟商品搜索功能
       searchProducts() {
         console.log('搜索商品:', this.searchKeyword, this.searchType, this.productStatus);
@@ -169,13 +212,7 @@
       addStockRow() {
         this.newProduct.stock.push({ flavor: '', quantity: 0 });
       },
-  
-      // 提交添加商品
-      submitAddProduct() {
-        console.log('提交添加商品:', this.newProduct);
-        this.addProductDialogVisible = false;
-      },
-  
+
       // 库存解析：将库存字段从字符串转换为对象
       parseStock(stock) {
         return Array.isArray(stock) ? stock : [];
@@ -198,10 +235,6 @@
         console.log('查看商品详情:', id);
       }
     },
-  
-    mounted() {
-      console.log('商品数据加载完成');
-    }
   };
   </script>
   

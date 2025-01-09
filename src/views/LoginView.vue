@@ -39,16 +39,6 @@
         <!-- 登录按钮 -->
         <button type="submit" class="login-btn">登录</button>
 
-        <!-- 其他登录方式 -->
-        <div class="other-login">
-          <p class="divider">其他登录方式</p>
-          <div class="social-login">
-            <span class="social-icon wechat">微信</span>
-            <span class="social-icon qq">QQ</span>
-            <span class="social-icon weibo">微博</span>
-          </div>
-        </div>
-
         <!-- 注册链接 -->
         <div class="register-link">
           还没有账号？<router-link to="/register">立即注册</router-link>
@@ -60,6 +50,7 @@
 
 <script>
 import axios from 'axios';
+import { mapMutations } from 'vuex';
 
 export default {
   name: 'LoginView',
@@ -73,34 +64,46 @@ export default {
     }
   },
   methods: {
+    ...mapMutations(['setUser']),
+
     async handleLogin() {
       try {
-        // 创建登录参数
         const formData = new FormData();
         formData.append('username', this.loginForm.username);
         formData.append('password', this.loginForm.password);
 
-        // 登录请求
-        const loginResponse = await axios.post('http://localhost:8081/users/login', formData);
-        
-        if (loginResponse.data.status === 'success') {
-          // 登录成功后获取用户详细信息并保存到 Vuex
-          const success = await this.$store.dispatch('login', {
-            username: this.loginForm.username,
-            password: this.loginForm.password
-          });
+        const response = await axios.post('http://localhost:8081/users/login', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
 
-          if (success) {
-            this.$message.success('登录成功');
+        console.log('Login response:', response.data); // 添加日志输出
+
+        if (response.data.status === 'success') {
+          const userData = {
+            user_id: response.data.user_id,
+            role: response.data.role, // 确保包含角色
+            username: this.loginForm.username
+          };
+          
+          this.setUser(userData);
+          this.$message.success('登录成功');
+          console.log('Login response:', userData);
+
+          // 根据用户角色跳转
+          if (userData.role === 'admin') {
+            this.$router.push('/admin'); // 确保跳转到管理员页面
+          } else {
             const redirectPath = this.$route.query.redirect || '/';
             this.$router.push(redirectPath);
-          } else {
-            this.$message.error('获取用户信息失败');
           }
         } else {
-          this.$message.error(loginResponse.data.message || '登录失败');
+          this.$message.error(response.data.message || '登录失败');
         }
       } catch (error) {
+        console.error('Login error:', error);
+        // 处理错误信息
         const errorMessage = error.response?.data?.message || '服务器错误';
         this.$message.error(errorMessage);
       }
@@ -109,7 +112,7 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" scoped>  
 .login-page {
   min-height: calc(100vh - 120px); // 减去头部导航的高度
   background-color: #f5f5f5;

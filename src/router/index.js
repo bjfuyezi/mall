@@ -2,6 +2,9 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
+import AdminView from '../views/admin/AdminView.vue'
+import CouponManagement from '../views/admin/CouponManagement.vue'
+import UserManagement from '../views/admin/UserManagement.vue'
 
 Vue.use(VueRouter)
 
@@ -123,6 +126,55 @@ const routes = [
     path: '/shopmodel/addProduct',
     name: 'addProduct',
     component: () => import('../views/shopmodel/AddProduct.vue')
+  },
+  {
+    path: '/forget-password',
+    name: 'forget-password',
+    component: () => import('../views/ForgetPasswordView.vue')
+  },
+  {
+    path: '/admin',
+    component: AdminView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: '',
+        redirect: 'dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/DashboardView.vue')
+      },
+      {
+        path: 'shop-audit',
+        name: 'ShopAudit',
+        component: () => import('../views/admin/ShopAuditView.vue')
+      },
+      {
+        path: 'product-audit',
+        name: 'ProductAudit',
+        component: () => import('../views/admin/ProductAuditView.vue')
+      },
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: UserManagement,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'coupons',
+        name: 'CouponManagement',
+        component: CouponManagement,
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'ads',
+        name: 'AdManagement',
+        component: () => import('../views/admin/AdManagement.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      }
+    ]
   }
 ]
 
@@ -141,6 +193,13 @@ router.beforeEach((to, from, next) => {
         path: '/login',
         query: { redirect: to.fullPath }
       });
+    } else if (to.matched.some(record => record.meta.requiresAdmin)) {
+      // 检查是否是管理员
+      if (store.state.user.role !== 'admin') {
+        next('/');
+      } else {
+        next();
+      }
     } else {
       next();
     }
