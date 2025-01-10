@@ -118,11 +118,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/ad',
-    name: 'AdManageMent',
-    component: () => import('../views/shopmodel/AdManagement.vue')
-  },
-  {
     path: '/shopmodel/addProduct',
     name: 'addProduct',
     component: () => import('../views/shopmodel/AddProduct.vue')

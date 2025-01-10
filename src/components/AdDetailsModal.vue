@@ -1,123 +1,221 @@
 <template>
-  <transition name="modal-fade">
-    <div v-if="show" class="modal-overlay" @click.self="close">
-      <div class="modal-content">
-        <header>
-          <h2>{{ ad.title }}</h2>
-          <button @click="close">&times;</button>
-        </header>
-        <main>
-          <p>{{ ad.description }}</p>
-          <span class="status">{{ ad.status }}</span>
-        </main>
-        <footer>
-          <button @click="close">关闭</button>
-        </footer>
+  <el-dialog
+    :visible.sync="dialogVisible"
+    title="编辑广告"
+    width="80%"
+    @close="resetForm"
+  >
+    <div class="detail-page">
+      <!-- 图片显示区域 -->
+      <div class="image-container">
+        <img :src="`http://localhost:8081${this.currentAd.url}`" alt="广告图片" v-if="currentAd.url" />
+        <p v-else>{{`http://localhost:8081${this.currentAd.url}`}}</p>
+
+          <el-form :model="currentAd" label-width="120px" class="ad-form" ref="editForm">
+          <!-- 开始时间 -->
+          <el-form-item label="创建时间">
+            <span>{{ currentAd.created_time ? new Date(currentAd.created_time).toISOString().split('T')[0] : '暂无' }}</span>
+          </el-form-item>
+
+          <!-- 结束时间 -->
+          <el-form-item label="更新时间">
+            <span>{{ currentAd.updated_time ? new Date(currentAd.updated_time).toISOString().split('T')[0] : '暂无' }}</span>
+          </el-form-item>
+          </el-form>
+      </div>
+
+      <!-- 右侧信息区域 -->
+      <div class="info-container">
+        <el-form :model="currentAd" label-width="120px" class="ad-form" ref="editForm">
+          <!-- 广告名称 -->
+          <el-form-item label="广告编号">
+           <span>{{ currentAd.advertisement_id }}</span>
+          </el-form-item>
+          <!-- 广告名称 -->
+          <el-form-item label="广告名称">
+            <el-input v-model="currentAd.name" placeholder="请输入广告名称" />
+          </el-form-item>
+
+          <!-- 广告类型 -->
+          <el-form-item label="广告类型">
+            <span>{{ currentAd.advertisement_type === 'shop' ? '店铺推广' : '商品推广' }}</span>
+          </el-form-item>
+          
+          <!-- 投放方式 -->
+          <el-form-item label="投放方式">
+            <span>{{ currentAd.banner ? '首页推广' : '购买曝光量' }}</span>
+          </el-form-item>
+
+          <!-- 商铺名称 -->
+          <el-form-item label="商铺名称">
+            <span>{{ currentAd.shop_name }}</span>
+          </el-form-item>
+
+          <!-- 商品名称 -->
+          <el-form-item label="商品名称" v-if="currentAd.product_name">
+            <span>{{ currentAd.product_name }}</span>
+          </el-form-item>
+
+          <!-- 开始时间 -->
+          <el-form-item label="开始时间">
+            <span>{{ currentAd.start_time ? new Date(currentAd.start_time).toISOString().split('T')[0] : '暂无' }}</span>
+          </el-form-item>
+
+          <!-- 结束时间 -->
+          <el-form-item label="结束时间">
+            <span>{{ currentAd.end_time ? new Date(currentAd.end_time).toISOString().split('T')[0] : '暂无' }}</span>
+          </el-form-item>
+
+          <!-- 价格 -->
+          <el-form-item label="价格">
+            <span>¥{{ currentAd.price }}</span>
+          </el-form-item>
+
+          <!-- 状态 -->
+          <el-form-item label="广告状态">
+            <span>{{ getStatusLabel(currentAd.status) }}</span>
+          </el-form-item>
+
+          <!-- 状态 -->
+          <el-form-item label="打回原因" v-if="currentAd.reason">
+            <span>{{ getStatusLabel(currentAd.reason) }}</span>
+          </el-form-item>
+        </el-form>
+        
+        <!-- 提交按钮区域 -->
+        <div class="dialog-footer">
+          <el-button @click="closeDialog">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">提交</el-button>
+        </div>
       </div>
     </div>
-  </transition>
+  </el-dialog>
 </template>
+
 <script>
+import axios from 'axios';
+
 export default {
-  name: 'AdDetailsModal',
   props: {
-    show: Boolean,
-    ad: Object
+    visible: {
+      type: Boolean,
+      default: false
+    },
+    adData: {
+      type: Object,
+      default: () => ({}),
+    }
+  },
+  data() {
+    return {
+      dialogVisible: this.visible,  // 控制弹窗显示
+      currentAd: { ...this.adData } // 初始化当前广告数据
+    };
+  },
+  watch: {
+    adData: {
+      immediate: true,  // 立即触发一次
+      handler(newAdData) {
+        this.currentAd = { ...newAdData };  // 更新 currentAd
+      }
+    },
+    visible(val) {
+      this.dialogVisible = val;
+      if (val) {
+        // 每次打开弹窗时，重新初始化 currentAd 为父组件的 adData
+        this.currentAd = { ...this.adData };  // 重新赋值，恢复初始数据
+      }
+    },
+    dialogVisible(val) {
+      this.$emit('update:visible', val);
+    }
   },
   methods: {
-    close() {
-      this.$emit('close');
+    // 状态标签转换
+    getStatusLabel(status) {
+      const statusMap = {
+        pending: '待审核',
+        approved: '已通过',
+        running: '进行中',
+        rejected: '被打回',
+        expired: '已到期'
+      };
+      return statusMap[status] || '未知';
+    },
+
+    // 提交数据
+    async handleSubmit() {
+       try {
+        console.log(this.currentAd);
+        const response = await axios.post('http://localhost:8081/advertise/updateinfo',{
+            advertisement_id: this.currentAd.advertisement_id,
+            name: this.currentAd.name
+            });
+        console.log(response);
+        alert("修改成功");
+        this.$emit('refresh'); 
+      } catch (error) {
+        console.error("修改出错", error);
+      }
+      this.closeDialog();
+    },
+
+    // 关闭弹窗的方法
+    closeDialog() {
+      this.currentAd = null;
+      this.dialogVisible = false;
+      console.log(this.dialogVisible);
+      this.$emit('close-dialog'); 
+    },
+
+    // 重置表单
+    resetForm() {
+    this.$nextTick(() => {
+      if (this.$refs.editForm) {
+        this.$refs.editForm.resetFields();  // 重置表单字段
+      } else {
+        console.error("表单引用未找到");
+      }
+    });
     }
   }
 };
 </script>
-<style scoped lang="scss">
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+
+<style scoped>
+.detail-page {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  justify-content: space-between;  /* 设置左右布局 */
+  padding: 20px;
+}
+.image-container {
+  width: 40%;  /* 图片区域占40% */
+  text-align: center;
+  margin-bottom: 20px; /* 给时间字段一点间距 */
 }
 
-.modal-content {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 500px;
-  overflow: hidden;
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: #ff6700;
-    color: #fff;
-
-    h2 {
-      margin: 0;
-      font-size: 1.5em;
-    }
-
-    button {
-      background: none;
-      border: none;
-      font-size: 1.5em;
-      color: #fff;
-      cursor: pointer;
-    }
-  }
-
-  main {
-    padding: 1rem;
-
-    p {
-      margin: 0 0 1rem 0;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.875em;
-      font-weight: bold;
-      color: white;
-      background-color: #ff6700;
-    }
-  }
-
-  footer {
-    padding: 1rem;
-    text-align: right;
-
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #fff;
-      background-color: #ff6700;
-      transition: background-color 0.3s ease;
-
-      &:hover {
-        background-color: darken(#ff6700, 10%);
-      }
-    }
-  }
+.image-container img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
 }
 
-.modal-fade-enter-active, .modal-fade-leave-active {
-  transition: opacity 0.3s ease;
+.info-container {
+  width: 55%;  /* 信息区域占55% */
 }
 
-.modal-fade-enter, .modal-fade-leave-to {
-  opacity: 0;
+.ad-form .el-form-item {
+  margin-bottom: 10px;
+}
+
+.dialog-footer {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.el-form-item span {
+  display: inline-block;
+  line-height: 25px;
+  font-size: 14px;
 }
 </style>
