@@ -226,5 +226,8 @@ export default {
 
 #app {
   padding-top: 110px;
+  // min-height: 90vh; /* 确保 App 组件的最小高度为视口高度 */
+  // display: flex;
+  // flex-direction: column;
 }
 </style>

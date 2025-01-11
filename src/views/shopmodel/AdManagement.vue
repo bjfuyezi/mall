@@ -1,242 +1,348 @@
 <template>
   <div class="ad-management">
-    <header>
-      <button @click="toggleBannerModal" class="add-ad-btn">添加广告</button>
-      <button @click="toggleAddAdModal" class="add-ad-btn">购买曝光量</button>
-    </header>
+    <h2>广告管理</h2>
 
-    <!-- 添加广告的弹窗 -->
-    <transition name="modal-fade">
-      <div v-if="showBannerModal" class="modal-overlay" @click.self="closeBannerModal">
-        <div class="modal-container">
-          <AddBanner @close="closeBannerModal" @adAdded="handleBanner"></AddBanner>
+     <!-- 搜索栏和操作按钮（顶部）-->
+      <div class="search-bar">
+        <div style="display: flex; align-items: center;">
+          <!-- 搜索方式选择 -->
+          <el-select
+            v-model="searchType"
+            placeholder="请选择搜索方式"
+            style="width: 150px; margin-right: 10px;">
+            <el-option label="名称" value="name" />
+            <el-option label="商铺名" value="shop" />
+          </el-select>
+  
+          <!-- 搜索框 -->
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入商品名称或商铺名"
+            style="width: 200px; margin-right: 10px;"
+          />
+  
+          <!-- 搜索按钮 -->
+          <el-button @click="searchAdvertise" type="primary">搜索</el-button>
+          <!--新增按键-->
+          <el-button @click="toggleBannerModal" class="add-ad-btn">添加广告</el-button>
+          <el-button @click="toggleAddAdModal" class="add-ad-btn">购买曝光量</el-button>
         </div>
-      </div>
-    </transition>
 
-        <!-- 购买曝光的弹窗 -->
-    <transition name="modal-fade">
-      <div v-if="showAddAdModal" class="modal-overlay" @click.self="closeAddAdModal">
-        <div class="modal-container">
-          <AddAd @close="closeAddAdModal" @adAdded="handleAdAdded"></AddAd>
+        <div style="margin-top: 10px; display: flex; align-items: center;">
+          <!-- 广告状态选择 -->
+          <el-select
+            v-model="advertiseStatus"
+            placeholder="选择广告状态"
+            style="width: 200px; margin-right: 10px;">
+            <el-option label="全部" value="all" />
+            <el-option label="待审核" value="pending" />
+            <el-option label="已通过" value="approved" />
+            <el-option label="正在进行" value="running" />
+            <el-option label="已打回" value="rejected" />
+            <el-option label="已失效" value="expired" />
+          </el-select>
         </div>
+        <!-- <div style="display: flex; align-items: center;">
+            
+            <button @click="toggleBannerModal" class="add-ad-btn">添加广告</button>
+            <button @click="toggleAddAdModal" class="add-ad-btn">购买曝光量</button>
+        </div> -->
       </div>
-    </transition>
 
-<section class="filters">
+    <!-- 使用 el-dialog 替换弹窗 -->
+    <el-dialog
+      v-model="showBannerModal"
+      title="添加首页广告"
+      @close="closeBannerModal"
+      :visible.sync="showBannerModal"
+    >
+      <add-banner @close-ad="closeBannerModal" @refresh="fetchAds()"></add-banner>
+    </el-dialog>
+
+    <!-- 购买曝光量的弹窗 -->
+    <el-dialog
+      v-model="showAddAdModal"
+      title="购买曝光量"
+      @close="closeAddAdModal"
+      :visible.sync="showAddAdModal"
+    >
+      <add-ad @close-ad="closeAddAdModal" @refresh="fetchAds()"></add-ad>
+    </el-dialog>
+
+
+    <!-- 商品列表（中部）-->
       <div>
-        <div class="radio-group">
-          <label v-for="(status, index) in statuses" :key="index">
-            <input
-              type="radio"
-              :id="status.value"
-              :value="status.value"
-              v-model="statusFilter"
-              name="statusFilter"
-            />
-            {{ status.label }}
-          </label>
-        </div>
+        <el-table :data="filteredAdvertise" style="width: 100%">
+          <el-table-column prop="name" label="广告名称" />
+          <el-table-column prop="shop_name" label="店铺名称" />
+          <el-table-column label="广告类型" >
+            <template slot-scope="scope">
+                {{ scope.row.advertisement_type === 'shop' ? '店铺推广' : '商品推广'  }}
+            </template>
+          </el-table-column>
+          <el-table-column label="投放方式" >
+            <template slot-scope="scope">
+                {{ scope.row.banner === true ? '首页推广' : '购买曝光量'  }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="start_time" label="开始时间" >
+             <template slot-scope="scope">
+                {{ scope.row.start_time? new Date(scope.row.start_time).toISOString().split('T')[0] : '暂无'}}
+            </template>
+          </el-table-column>
+          <el-table-column prop="end_time" label="结束时间" >
+              <template slot-scope="scope">
+                {{ scope.row.end_time? new Date(scope.row.end_time).toISOString().split('T')[0] : '暂无' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="status" label="状态" >
+              <template slot-scope="scope">
+    <!-- 根据状态值匹配标签 -->
+                {{ getStatusLabel(scope.row.status) }}
+              </template>
+          </el-table-column>
+          <el-table-column prop="price" label="价格" />
+  
+          <el-table-column label="操作" min-width="150">
+            <template slot-scope="scope">
+              <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: nowrap; width: 100%;">
+
+              <!-- 强制下线按钮（红色） -->
+              <el-button 
+                v-if="scope.row.status === 'approved' || scope.row.status === 'running'" 
+                @click="updateAd(scope.row.advertisement_id,'expired')" 
+                size="small" 
+                type="danger">
+                强制下线
+              </el-button>
+
+              <!-- 详情按钮（蓝色） -->
+              <el-button 
+                @click="showAdvertiseDetails(scope.row)" 
+                size="small" 
+                type="primary">
+                编辑
+              </el-button>
+              
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+  
+        <!-- 翻页组件 -->
+        <el-pagination
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :total="totalItems"
+          @current-change="handlePageChange"
+          layout="prev, pager, next"
+        />
       </div>
-    </section>
 
+      <!-- 编辑弹窗组件 -->
+      <edit-ad-dialog 
+        :visible.sync="editDialogVisible"
+        :adData="currentAd"
+        @close-dialog="closeDialog"
+        @refresh="fetchAds()"
+      />
+    </div>
 
-    <AdList :statusFilter="statusFilter" @viewAdDetails="viewAdDetails"></AdList>
-
-    <transition name="modal-fade">
-      <AdDetailsModal
-        v-if="selectedAd"
-        :show="!!selectedAd"
-        :ad="selectedAd"
-        @close="closeAdDetails"
-      ></AdDetailsModal>
-    </transition>
-  </div>
 </template>
-<script>
-import AdList from '../../components/AdList.vue';
-import AddBanner from '../../components/AddBanner.vue';
-import AddAd from '../../components/AddAd.vue';
-import AdDetailsModal from '../../components/AdDetailsModal.vue';
 
+<script>
+import axios from 'axios';
+import EditAdDialog from '@/components/AdDetailsModal.vue';
+import AddAd from '@/components/AddAd.vue';
+import AddBanner from '@/components/AddBanner.vue';
 export default {
-  name: 'promotion-management',
   components: {
-    AddBanner,
-    AdList,
-    AdDetailsModal,
-    AddAd
+    EditAdDialog,
+    AddAd,
+    AddBanner
   },
   data() {
     return {
-      showAddAdModal: false, 
-      showBannerModal: false, 
-      statusFilter: 'all',
-      selectedAd: null,
-      // 定义可用的状态选项
-      statuses: [
-        { value: 'all', label: '全部' },
-        { value: 'pending', label: '待审核' },
-        { value: 'approved', label: '已通过' },
-        { value: 'running', label: '进行中' },
-        { value: 'rejected', label: '被拒绝' },
-        { value: 'expired', label: '已完成' }
-      ]
-    };
+        searchKeyword: '',
+        showAddAdModal: false, 
+        showBannerModal: false, 
+        editDialogVisible: false,
+        reasonDialogVisible: false, // 控制弹窗显示
+        reason: '',          // 存储拒绝原因
+        reason_type : '',
+        searchShop: '',
+        searchType: 'name',  // 默认为根据名称搜索
+        advertiseStatus: 'all',  // 默认为“全部”状态
+        //categories: ['零食小吃', '酒水饮料', '干货腌货', '即食食品', '农产品'],
+        advertises: [],
+        advertiseall:[],
+        currentPage: 1,
+        pageSize: 10,
+        searchButton: false,
+        searchKey:null,
+        currentAd:null,//当前处理的广告
+        totalItems: 0 // 模拟总商品数
+      };
   },
+  computed: {
+        // 过滤后的广告
+            filteredAdvertise() {
+      let filtered = this.advertises;
+
+      // 根据广告状态过滤
+      if (this.advertiseStatus !== 'all') {
+        filtered = filtered.filter(advertise => advertise.status === this.advertiseStatus);
+      }
+
+      // 如果有关键词，进行搜索过滤
+      if (this.searchKey) {
+        filtered = filtered.filter(advertise => {
+          if (this.searchType === 'name') {
+            return advertise.name.toLowerCase().includes(this.searchKey.toLowerCase());
+          } else if (this.searchType === 'shop') {
+            return advertise.shop_name.toLowerCase().includes(this.searchKey.toLowerCase());
+          }
+          return false;
+        });
+      }
+
+      return filtered;
+    }
+    },
   methods: {
-    toggleAddAdModal() {
-      this.showAddAdModal = !this.showAddAdModal;
+    getStatusLabel(status) {
+    const statusMap = {
+      pending: '待审核',
+      approved: '已通过',
+      running: '进行中',
+      rejected: '被打回',
+      expired: '已到期'
+    };
+    return statusMap[status] || '未知'; // 如果没有匹配到，显示“未知”
     },
-    handleAdAdded() {
-      this.closeAddAdModal();
-      this.$nextTick(() => {
-        // 刷新广告列表的逻辑...
-      });
-    },
-    closeAddAdModal() {
-      this.showAddAdModal = false;
-    },
-    toggleBannerModal() {
-      this.showBannerModal = !this.showBannerModal;
-    },
-    handleBanner() {
-      this.closeBannerModal();
-      this.$nextTick(() => {
-        // 刷新广告列表的逻辑...
-      });
+    //关闭详情弹窗
+    closeDialog() {
+      alert("关闭");
+      this.editDialogVisible = false;  // 关闭弹窗
+      this.currentAd = null;
     },
     closeBannerModal() {
-      this.showBannerModal = false;
+      //alert("关闭banner");
+      this.showBannerModal = false;  // 关闭弹窗
     },
-    viewAdDetails(ad) {
-      this.selectedAd = ad;
+    closeAddAdModal() {
+      alert("关闭");
+      this.showAddAdModal = false;  // 关闭弹窗
     },
-    closeAdDetails() {
-      this.selectedAd = null;
+    //更新状态
+    async updateAd(adId,status,reason){
+      console.log(adId,status);
+      try {
+        const response = await axios.post('http://localhost:8081/advertise/status',{
+            advertisement_id: adId,
+            status: status,
+            reason: reason
+            });
+        console.log(response);
+        alert("提交成功");
+        this.fetchAds();
+      } catch (error) {
+        console.error("操作出错", error);
+      }
+    },
+    // 提交原因
+    submitReason() {
+    if (!this.reason) {
+      this.$message.error('请输入拒绝原因');
+      return;
     }
+    this.updateAd(this.currentAd.advertisement_id,this.reason_type,this.reason);
+
+    this.reasonDialogVisible = false;
+    this.reason = '';  // 清空输入的原因
+    this.reason_type = '';
+  },
+  async deleteAd(adId) {
+      // 删除广告逻辑
+      const flag = confirm('确认要删除吗？')
+      console.log(adId);
+      if(flag){
+        const response = await axios.delete('http://localhost:8081/advertise/del',{
+           params: {id: adId}
+        });
+      
+      if(response.status == 200){
+        alert('删除成功！');
+      }else{
+        alert('删除失败');
+      }}
+      this.fetchAds();
+      //console.log('Deleting ad with ID:', adId); // 使用 adId 变量
+    },
+    //显示详情弹窗
+    showAdvertiseDetails(ad){
+      this.currentAd = ad;  // 将选中的广告数据传递给编辑表单
+      this.editDialogVisible = true;  // 显示编辑弹窗
+    },
+    toggleAddAdModal() {
+      this.showAddAdModal = true;
+    },
+    toggleBannerModal() {
+      this.showBannerModal = true;
+    },
+    //显示原因弹窗
+    showReasonDialog(ad,type) {
+    this.currentAd = ad;  // 保存当前广告信息
+    this.reasonDialogVisible = true; // 显示弹窗
+    this.reason_type = type;
+    },
+    // 重置原因弹窗
+    resetReasonForm() {
+      this.reason = '';  // 关闭弹窗时清空输入框
+      this.reason_type = '';
+      this.reasonDialogVisible=false;
+    },
+    async fetchAds() {
+      // 获取广告列表
+      // 这里可以调用 API 获取广告列表
+      // 示例数据
+      try {
+        const userid = this.$store.getters.userId;
+        const response = await axios.get('http://localhost:8081/advertise/user',{
+            params:{
+                uid:userid
+            }
+        });
+        console.log(response)
+        this.advertiseall = response.data;
+        this.advertises = response.data.slice(0,10); 
+        this.totalItems = response.data.length;
+        console.log(this.totalItems);
+      } catch (error) {
+        console.error("There was an error fetching the ads!", error);
+      }
+      //this.advertises=[{name:"hah",shop:"12",type:"a"},]
+    },
+    searchAdvertise() {
+      if (this.searchKeyword) {
+          this.searchKey=this.searchKeyword
+      }else{
+        this.searchKey = null
+      }
+  },
+  handlePageChange(newPage) {
+      this.currentPage = newPage; // 更新当前页
+      this.advertises = this.advertiseall.slice((this.currentPage-1)*this.pageSize,this.currentPage*this.pageSize);
+    },
+  },
+  mounted() {
+    this.fetchAds(); // 获取广告列表
   }
-};
+}
 </script>
-<style scoped lang="scss">
-.modal-container {
-  max-height: 80vh; // 设置模态框的最大高度为视口高度的80%
-  width: 60vh; 
-  overflow-y: auto; // 当内容超出容器的高度时，允许垂直滚动
-}
+
+<style>
 .ad-management {
-  padding: 20px;
-  background-color: #f7f7f7;
-  min-height: 100vh;
-
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-
-    h1 {
-      font-size: 2em;
-      color: #ff6700;
-    }
-
-    .add-ad-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #fff;
-      background-color: #ff6700;
-      transition: background-color 0.3s ease;
-
-      &:hover {
-        background-color: darken(#ff6700, 10%);
-      }
-    }
-  }
-
-  .filters {
-  margin-bottom: 1rem;
-
-  .radio-group {
-    display: flex;
-    flex-wrap: wrap;
-
-    label {
-      display: flex;
-      align-items: center;
-      margin-right: 1rem;
-      margin-bottom: 0.5rem;
-      font-weight: normal;
-
-      input[type="radio"] {
-        margin-right: 0.5rem;
-      }
-    }
-  }
-
-  strong {
-    font-weight: bold;
-    margin-right: 0.5rem;
-  }
+  padding: 10px;
 }
-
-  .form-fade-enter-active, .form-fade-leave-active {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-  }
-
-  .form-fade-enter, .form-fade-leave-to {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  
-}
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .modal-container {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 500px;
-    padding: 20px;
-    overflow: hidden;
-    position: relative;
-
-    h2 {
-      margin-top: 0;
-      font-size: 1.5em;
-      color: #ff6700;
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 1.5em;
-      cursor: pointer;
-    }
-  }
-
-  .modal-fade-enter-active, .modal-fade-leave-active {
-    transition: opacity 0.3s ease;
-  }
-
-  .modal-fade-enter, .modal-fade-leave-to {
-    opacity: 0;
-  }
-
-</style>
+</style> 
