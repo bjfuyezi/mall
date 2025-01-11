@@ -74,9 +74,9 @@
                 <el-button 
                   type="text"
                   size="small"
-                  @click="viewOrderDetail(order)"
+                  @click="addToCart(order)"
                 >
-                  订单详情
+                  加入购物车
                 </el-button>
               </div>
             </div>
@@ -148,7 +148,7 @@ export default {
       activeTab: 'all',
       orders: [
         {
-          id: '2',
+          id: '4',
           date: '2024-03-20 15:30:00',
           status: '待付款',
           products: [
@@ -165,7 +165,7 @@ export default {
           totalAmount: 999
         },
         {
-          id: '202403200002',
+          id: '2',
           date: '2024-03-20 14:30:00',
           status: '已完成',
           products: [
@@ -353,7 +353,31 @@ export default {
           }, 3000);
         }
       });
-    }
+    },
+    /*async addToCart(order) {
+      try {
+        // 获取订单中的第一个商品
+        const product = order.products[0];
+        
+        const cartData = {
+          user_id: 1, // 应该从用户状态中获取
+          product_id: product.id,
+          quantity: product.quantity,
+          shop_id: order.shop_id || 1 // 如果订单中有店铺ID就使用，否则默认为1
+        };
+
+        const response = await this.$axios.post('http://localhost:8081/cart/add', cartData);
+        
+        if (response.status === 201) {
+          this.$message.success('已添加到购物车');
+        } else {
+          throw new Error(response.data.message || '添加失败');
+        }
+      } catch (error) {
+        this.$message.error(error.message || '添加到购物车失败，请重试');
+        console.error('添加到购物车失败:', error);
+      }
+    }*/
   },
   beforeDestroy() {
     this.stopCheckPayStatus();
