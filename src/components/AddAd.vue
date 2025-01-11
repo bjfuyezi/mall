@@ -59,13 +59,14 @@ export default {
         selectedProduct: null, // 新增字段用于存储选中的产品ID
         times: 0//推广次数
       },
+      shop_id:0,
       isSubmitting: false,
       error: null,
       products: [], // 存储从后端获取的产品列表
     };
   },
   created(){
-    this.getProucts()
+    this.getProducts()
   },
   methods: {
     handleFileChange(event) {
@@ -91,15 +92,28 @@ export default {
       // 返回格式化的日期字符串
       return `${year}-${month}-${day} 00:00:00`;
     },
-    async getProucts() {
-        try {
-          // 从后端获取产品列表
-          //const response = await axios.get('http://localhost:8081/products');
-          this.products = [{id:1,name:'商品1'},{id:2,name:'商品2'},{id:3,name:'商品3'}]//response.data; // 假设后端返回的是一个产品数组
-        } catch (err) {
-          this.error = '无法加载产品列表，请稍后再试';
+    async getProducts() {
+      console.log('here');
+      const userid = this.$store.getters.userId;
+      const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:userid});
+      if ( shopResponse.data != null ) {
+          const proResponse = await axios.post('http://localhost:8081/product/getAllByShop_id', {id:shopResponse.data.shop_id});
+          if ( proResponse.data != null ) {
+            this.products = proResponse.data;
+            console.log(proResponse.data[0]);
+          }
         }
-    },
+     
+        },
+    // async getProucts() {
+    //     try {
+    //       // 从后端获取产品列表
+    //       //const response = await axios.get('http://localhost:8081/products');
+    //       this.products = [{id:1,name:'商品1'},{id:2,name:'商品2'},{id:3,name:'商品3'}]//response.data; // 假设后端返回的是一个产品数组
+    //     } catch (err) {
+    //       this.error = '无法加载产品列表，请稍后再试';
+    //     }
+    // },
     async price_cal(){
         try {
           const response = await axios.get('http://localhost:8081/advertise/money',{
@@ -118,7 +132,6 @@ export default {
     },
     async handleSubmit() {
       try {
-        this.isSubmitting = true;
         this.error = null;
 
         const formData = new FormData();
@@ -131,6 +144,7 @@ export default {
         formData.append('times', this.convertToInt(this.formData.times));
         formData.append('price', this.convertToFloat(this.formData.price));
         formData.append('banner', false);
+        formData.append('shop_id',this.shop_id);
 
         // 添加文件（如果有）
         if (this.formData.picture) {
@@ -139,16 +153,25 @@ export default {
 
         // 发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
-
-        console.log(response);
-        console.log('Form submitted:', formData);
-        this.$emit('adAdded', { ...this.formData });
+        if(response.status==200){
+          alert('申请成功');
+          this.$emit('refresh');
+        }else {
+          alert('申请失败，遇到',response.status,'错误');
+        }
+        console.log(response.data);
+        this.$emit('refresh',response.data);
         this.clearForm();
       } catch (err) {
         this.error = err.message || '发生错误，请稍后再试';
-      } finally {
-        this.isSubmitting = false;
       }
+      this.closeDialog();
+    },
+    // 关闭弹窗的方法
+    closeDialog() {
+      //this.dialogVisible = false;
+      // alert('小弹窗');
+      this.$emit('close-ad'); 
     },
     clearForm() {
       this.formData = {

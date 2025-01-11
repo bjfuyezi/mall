@@ -189,8 +189,9 @@ export default {
         advertiseStatus: 'all',  // 默认为“全部”状态
         //categories: ['零食小吃', '酒水饮料', '干货腌货', '即食食品', '农产品'],
         advertises: [],
+        advertisesall: [],
         currentPage: 1,
-        pageSize: 15,
+        pageSize: 7,
         searchButton: false,
         searchKey:null,
         currentAd:null,//当前处理的广告
@@ -309,7 +310,9 @@ export default {
         const response = await axios.get('http://localhost:8081/advertise/admin');
         console.log(response)
         this.advertises = response.data; 
-        console.log(response)
+        this.advertiseall = response.data;
+        this.advertises = response.data.slice(0,9); 
+        this.totalItems = response.data.length;
       } catch (error) {
         console.error("There was an error fetching the ads!", error);
       }
@@ -322,6 +325,10 @@ export default {
         this.searchKey = null
       }
   },
+  handlePageChange(newPage) {
+      this.currentPage = newPage; // 更新当前页
+      this.advertises = this.advertiseall.slice((this.currentPage-1)*this.pageSize,this.currentPage*this.pageSize);
+    },
   },
   mounted() {
     this.fetchAds(); // 获取广告列表

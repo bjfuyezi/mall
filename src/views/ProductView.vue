@@ -127,50 +127,42 @@ export default {
         favorites: 200,
         stock: 100,
         description: '<p>这里是商品详细介绍...</p>',
-        reviewList: [
-          {
-            id: 1,
-            userName: '用户1',
-            userAvatar: 'https://via.placeholder.com/40',
-            rating: 5,
-            content: '商品很好，很满意！',
-            images: ['https://via.placeholder.com/100x100'],
-            time: '2024-03-20'
-          }
-        ]
+        reviewList: []
       },
       hotProducts: []
     }
   },
-  created() {
-    // 获取路由传递的商品数据
-    const routeProduct = this.$route.state?.product;
-    if (routeProduct) {
-      // 合并路由传递的数据和默认数据
-      this.product = {
-        ...this.product,
-        id: routeProduct.id,
-        name: routeProduct.name,
-        price: Number(routeProduct.price),
-        mainImage: routeProduct.imagePath || this.product.mainImage,
-      };
-    }
-    // 如果需要，可以再次请求完整的商品数据
-    this.fetchProductDetail();
-  },
-  methods: {
-    async fetchProductDetail() {
-      try {
-        const response = await this.$axios.get(`/api/products/${this.$route.params.id}`);
-        // 合并API返回的数据
+  async created() {
+    try {
+      // 从路由获取商品ID
+      const productId = this.$route.params.id;
+      
+      // 请求商品详情
+      const response = await this.$axios.get(`http://localhost:8081/product/show?id=${productId}`);
+      
+      if (response.data.code === 200) {
+        // 合并API返回的数据和默认数据
         this.product = {
           ...this.product,
-          ...response.data
+          id: response.data.data.id,
+          name: response.data.data.name,
+          price: response.data.data.price,
+          mainImage: response.data.data.image || this.product.mainImage,
+          description: response.data.data.description || this.product.description,
+          stock: response.data.data.stock,
+          sales: response.data.data.sales || 0,
+          reviews: response.data.data.reviews || 0,
+          favorites: response.data.data.favorites || 0
         };
-      } catch (error) {
-        console.error('获取商品详情失败:', error);
+      } else {
+        throw new Error(response.data.message || '获取商品信息失败');
       }
-    },
+    } catch (error) {
+      this.$message.error(error.message || '获取商品信息失败，请重试');
+      console.error('获取商品详情失败:', error);
+    }
+  },
+  methods: {
     addToCart() {
       this.$message.success('已添加到购物车')
     },
