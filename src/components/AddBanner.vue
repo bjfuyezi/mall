@@ -182,7 +182,8 @@ export default {
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
         if(response.status==200){
           alert('申请成功');
-          this.$emit('refresh');
+            console.log(response.data);
+            this.$emit('refresh',response.data);
         }else if(response.data==409){
           alert('当前时间段广告申请已达上限');
         }
