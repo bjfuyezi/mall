@@ -156,7 +156,6 @@ export default {
     },
     async handleSubmit() {
       try {
-        this.isSubmitting = true;
         this.error = null;
 
         const formData = new FormData();
@@ -179,20 +178,25 @@ export default {
           formData.append('picture',null)
         }
 
-        // 发送请求到服务器
+        //发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
         if(response.status==200){
           alert('申请成功');
+          this.$emit('refresh');
+        }else if(response.data==409){
+          alert('当前时间段广告申请已达上限');
         }
-        console.log(response);
-        console.log('Form submitted:', formData);
-        this.$emit('adAdded', { ...this.formData });
-        this.clearForm();
       } catch (err) {
         this.error = err.message || '发生错误，请稍后再试';
-      } finally {
-        this.isSubmitting = false;
       }
+      console.log('到这里');
+      this.closeDialog();
+    },
+    // 关闭弹窗的方法
+    closeDialog() {
+      //this.dialogVisible = false;
+      // alert('小弹窗');
+      this.$emit('close-ad'); 
     },
     clearForm() {
       this.formData = {
