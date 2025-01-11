@@ -56,7 +56,7 @@
       @close="closeBannerModal"
       :visible.sync="showBannerModal"
     >
-      <add-banner @close-ad="closeBannerModal" @refresh="fetchAds()"></add-banner>
+      <add-banner @close-ad="closeBannerModal" @refresh="payOrder"></add-banner>
     </el-dialog>
 
     <!-- 购买曝光量的弹窗 -->
@@ -66,7 +66,7 @@
       @close="closeAddAdModal"
       :visible.sync="showAddAdModal"
     >
-      <add-ad @close-ad="closeAddAdModal" @refresh="fetchAds()"></add-ad>
+      <add-ad @close-ad="closeAddAdModal" @refresh="payOrder"></add-ad>
     </el-dialog>
 
 
@@ -146,6 +146,56 @@
         @close-dialog="closeDialog"
         @refresh="fetchAds()"
       />
+
+          <!-- 选择支付方式对话框 -->
+    <el-dialog
+      title="选择支付方式"
+      :visible.sync="showPayMethodDialog"
+      width="300px"
+      center
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <div class="pay-method-content">
+        <el-button class="pay-method-btn" @click="PayMethod('wechat')">
+          <i class="el-icon-goods"></i>
+          微信支付
+        </el-button>
+        <el-button class="pay-method-btn" @click="PayMethod('alipay')">
+          <i class="el-icon-goods"></i>
+          支付宝支付
+        </el-button>
+      </div>
+    </el-dialog>
+
+ <!-- 添加支付二维码对话框 -->
+    <el-dialog
+      :title="payTypeText"
+      :visible.sync="showPayDialog"
+      width="300px"
+      center
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <div class="pay-dialog-content">
+        <p class="pay-type-text">{{ payTypeText }}扫码支付</p>
+        <div class="qr-code" ref="qrCode"></div>
+        <div class="pay-amount">
+          支付金额：<span class="price">¥{{ currentPayAmount }}</span>
+        </div>
+        <div class="pay-tips">
+          <p>请使用{{ payTypeText }}扫描二维码完成支付</p>
+          <p class="small">支付完成前请不要关闭窗口</p>
+        </div>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelPay">取消支付</el-button>
+        <el-button type="primary" @click="confirmPay">确认已支付</el-button>
+      </div>
+    </el-dialog>
+    
     </div>
 
 </template>
@@ -155,6 +205,8 @@ import axios from 'axios';
 import EditAdDialog from '@/components/AdDetailsModal.vue';
 import AddAd from '@/components/AddAd.vue';
 import AddBanner from '@/components/AddBanner.vue';
+import QRCode from 'qrcodejs2';
+
 export default {
   components: {
     EditAdDialog,
@@ -181,7 +233,14 @@ export default {
         searchButton: false,
         searchKey:null,
         currentAd:null,//当前处理的广告
-        totalItems: 0 // 模拟总商品数
+        totalItems: 0, // 模拟总商品数
+        showPayMethodDialog: false,
+      showPayDialog: false,
+      payMethod: '',
+      payTypeText: '',
+      qrCodeInstance: null,
+      currentPayAmount: 0,
+      currentPay: null
       };
   },
   computed: {
@@ -216,7 +275,7 @@ export default {
       approved: '已通过',
       running: '进行中',
       rejected: '被打回',
-      expired: '已到期'
+      expired: '已失效'
     };
     return statusMap[status] || '未知'; // 如果没有匹配到，显示“未知”
     },
@@ -231,7 +290,7 @@ export default {
       this.showBannerModal = false;  // 关闭弹窗
     },
     closeAddAdModal() {
-      alert("关闭");
+      //alert("关闭");
       this.showAddAdModal = false;  // 关闭弹窗
     },
     //更新状态
@@ -264,18 +323,10 @@ export default {
   },
   async deleteAd(adId) {
       // 删除广告逻辑
-      const flag = confirm('确认要删除吗？')
       console.log(adId);
-      if(flag){
-        const response = await axios.delete('http://localhost:8081/advertise/del',{
+      await axios.delete('http://localhost:8081/advertise/del',{
            params: {id: adId}
         });
-      
-      if(response.status == 200){
-        alert('删除成功！');
-      }else{
-        alert('删除失败');
-      }}
       this.fetchAds();
       //console.log('Deleting ad with ID:', adId); // 使用 adId 变量
     },
@@ -334,6 +385,132 @@ export default {
       this.currentPage = newPage; // 更新当前页
       this.advertises = this.advertiseall.slice((this.currentPage-1)*this.pageSize,this.currentPage*this.pageSize);
     },
+  payOrder(data){
+    console.log(data);
+    this.currentPay = data;
+    this.currentPayAmount = data.price;
+    this.showPayMethodDialog = true;
+  },
+    async PayMethod(method) {
+    console.log(method);
+      this.payMethod = method;
+      this.payTypeText = method === 'wechat' ? '微信' : '支付宝';
+      this.showPayMethodDialog = false;
+      try {
+        /*// 调用后端接口获取支付链接
+        const response = await this.$axios.post('/order/pay', {
+          orderId: this.currentPayOrder.id,
+          amount: this.currentPayAmount,
+          payMethod: method
+        });
+        
+        // 显示支付二维码
+        this.showPayDialog = true;
+        this.$nextTick(() => {
+          this.generateQRCode(response.data.payUrl || 'https://example.com/pay');
+        });
+        
+        // 开始轮询支付状态
+        this.startCheckPayStatus(this.currentPayOrder.id);*/
+        this.showPayDialog = true;
+        const testPayUrl = method === 'wechat' 
+          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.id}_${this.currentPayAmount}` 
+          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.id}&amount=${this.currentPayAmount}`;
+
+        // 在对话框显示后生成二维码，并设置不同的颜色
+        this.$nextTick(() => {
+          this.generateQRCode(testPayUrl, method);
+        });
+        
+      } catch (error) {
+        this.$message.error('创建支付订单失败，请重试');
+        console.error('创建支付订单失败:', error);
+      }
+    },
+    generateQRCode(url, payMethod) {
+      // 清除已存在的二维码
+      if (this.qrCodeInstance) {
+        this.qrCodeInstance.clear();
+      }
+      const qrContainer = this.$refs.qrCode;
+      if (qrContainer) {
+        qrContainer.innerHTML = '';
+        this.qrCodeInstance = new QRCode(qrContainer, {
+          text: url,
+          width: 200,
+          height: 200,
+          colorDark: payMethod === 'wechat' ? '#2C8722' : '#00A0E9',  // 微信绿色 vs 支付宝蓝色
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    },
+    cancelPay() {
+      this.$confirm('确定要取消支付吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.showPayDialog = false;
+        this.stopCheckPayStatus();
+        this.deleteAd(this.currentPay.advertisement_id);
+      }).catch(() => {});
+    },
+    async confirmPay() {
+      try {
+        // 调用后端验证支付状态
+        const response = await this.$axios.post('http://localhost:8081/order/pay', {
+          order_id: this.currentPayOrder.id,
+          payment_method:this.payTypeText
+        });
+        /*
+        if (response.data.paid) {
+          this.$message.success('支付成功！');
+          this.showPayDialog = false;
+          // 更新订单状态
+          this.currentPayOrder.status = '待发货';
+          this.stopCheckPayStatus();
+        } else {
+          this.$message.warning('未检测到支付，请确认是否已完成支付');
+        }*/
+        if (response.status === 201) {
+          this.$message.success('支付成功！');
+          this.showPayDialog = false;
+          // 更新订单状态
+          //this.currentPayOrder.status = '待发货';
+          this.stopCheckPayStatus();
+          this.updateAd(this.currentPay.advertisement_id,'pending',null);//更新状态为申请状态
+          this.fetchAds();
+        } else {
+          this.$message.warning('未检测到支付，请确认是否已完成支付');
+        }
+      } catch (error) {
+        this.$message.error('验证支付状态失败，请稍后重试');
+        console.error('验证支付失败:', error);
+      }
+    },
+    startCheckPayStatus(orderId) {
+      this.payStatusTimer = setInterval(async () => {
+        try {
+          const response = await this.$axios.get(`/api/payment/status/${orderId}`);
+          if (response.data.paid) {
+            this.$message.success('支付成功！');
+            this.showPayDialog = false;
+            // 更新订单状态
+            this.currentPayOrder.status = '待发货';
+            this.stopCheckPayStatus();
+          }
+        } catch (error) {
+          console.error('检查支付状态失败:', error);
+        }
+      }, 3000); // 每3秒检查一次
+    },
+    stopCheckPayStatus() {
+      if (this.payStatusTimer) {
+        clearInterval(this.payStatusTimer);
+        this.payStatusTimer = null;
+      }
+    }
   },
   mounted() {
     this.fetchAds(); // 获取广告列表
