@@ -69,11 +69,11 @@
         imageList: [],
         commentForm: {
           comment_id: null,        // 由后端生成
-          user_id: 1,             // 应该从登录状态获取
-          order_id: 1,
+          user_id: null,             // 应该从登录状态获取
+          order_id: null,
           content: '',
           level: 5,               // 默认5星
-          product_id: 2,
+          product_id: null,
           status: '待评价',       // 默认状态
           created_time: null      // 由后端生成
         }
@@ -91,6 +91,7 @@
       // 从路由参数获取订单ID和商品ID
       this.commentForm.order_id = Number(this.$route.query.orderId) || null
       this.commentForm.product_id = Number(this.$route.query.productId) || null
+      this.commentForm.user_id = this.$store.getters.userId;
     },
     methods: {
       beforeUpload(file) {
@@ -147,7 +148,7 @@
           // 发送评价数据到后端
           const response = await this.$axios.post('http://localhost:8081/comment/create', commentData)
           
-          if (response.data.code === 200) {
+          if (response.status === 201) {
             this.$message.success('评价提交成功！')
             this.$router.push('/user/orders')
           } else {

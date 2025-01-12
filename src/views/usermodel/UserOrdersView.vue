@@ -9,32 +9,31 @@
           <el-tabs v-model="activeTab" @tab-click="handleTabClick">
             <el-tab-pane label="全部" name="all"></el-tab-pane>
             <el-tab-pane label="待付款" name="unpaid"></el-tab-pane>
-            <el-tab-pane label="待发货" name="unshipped"></el-tab-pane>
-            <el-tab-pane label="待收货" name="shipped"></el-tab-pane>
+            <el-tab-pane label="待收货" name="unreceive"></el-tab-pane>
             <el-tab-pane label="已完成" name="completed"></el-tab-pane>
+            <el-tab-pane label="已取消" name="cancelled"></el-tab-pane>
           </el-tabs>
         </div>
   
         <!-- 订单列表 -->
         <div class="order-list">
-          <div v-for="order in orders" :key="order.id" :id="`order-${order.id}`" class="order-item">
+          <div v-for="order in orders" :key="order.order_id" :id="`order-${order.order_id}`" class="order-item">
             <div class="order-header">
               <div class="order-info">
-                <span class="order-id">订单号：{{ order.id }}</span>
-                <span class="order-date">{{ order.date }}</span>
+                <span class="order-id">订单号：{{ order.order_id }}</span>
+                <span class="order-date">{{ new Date(order.date).toLocaleString() }}</span>
               </div>
-              <div class="order-status">{{ order.status }}</div>
+              <div class="order-status">{{ getStatusText(order.status) }}</div>
             </div>
   
             <div class="order-products">
-              <div v-for="product in order.products" :key="product.id" class="product-item">
-                <img :src="product.image" :alt="product.name">
+              <div class="product-item">
+                <img :src="order.product_image" :alt="order.product_name">
                 <div class="product-info">
-                  <h4>{{ product.name }}</h4>
-                  <p class="product-spec">{{ product.spec }}</p>
+                  <h4>{{ order.product_name }}</h4>
                   <div class="product-price">
-                    <span class="price">¥{{ product.price.toFixed(2) }}</span>
-                    <span class="quantity">x{{ product.quantity }}</span>
+                    <span class="price">¥{{ order.product_price.toFixed(2) }}</span>
+                    <span class="quantity">x{{ order.totalQuantity }}</span>
                   </div>
                 </div>
               </div>
@@ -47,7 +46,7 @@
               </div>
               <div class="order-actions">
                 <el-button 
-                  v-if="order.status === '待付款'" 
+                  v-if="order.status === 'pending'" 
                   type="primary"
                   size="small"
                   @click="payOrder(order)"
@@ -55,7 +54,7 @@
                   立即付款
                 </el-button>
                 <el-button 
-                  v-if="order.status === '待收货'" 
+                  v-if="order.status === 'delivered'" 
                   type="success"
                   size="small"
                   @click="confirmReceive(order)"
@@ -63,7 +62,7 @@
                   确认收货
                 </el-button>
                 <el-button 
-                  v-if="order.status === '已完成'" 
+                  v-if="order.status === 'completed'" 
                   type="primary"
                   plain
                   size="small"
@@ -140,24 +139,22 @@
 
 <script>
 import QRCode from 'qrcodejs2';
-
+import axios from 'axios';
 export default {
   name: 'UserOrdersView',
   data() {
     return {
       activeTab: 'all',
       orders: [
-        {
+        /*{
           id: '4',
           date: '2024-03-20 15:30:00',
-          status: '待付款',
+          status: 'pending',
           products: [
             {
               id: 1,
               name: '示例商品1',
-              spec: '默认规格',
               price: 999,
-              quantity: 1,
               image: 'https://via.placeholder.com/120'
             }
           ],
@@ -167,20 +164,18 @@ export default {
         {
           id: '2',
           date: '2024-03-20 14:30:00',
-          status: '已完成',
+          status: 'completed',
           products: [
             {
               id: 2,
               name: '示例商品2',
-              spec: '默认规格',
               price: 299,
-              quantity: 2,
               image: 'https://via.placeholder.com/120'
             }
           ],
           totalQuantity: 2,
           totalAmount: 598
-        }
+        }*/
       ],
       showPayMethodDialog: false,
       showPayDialog: false,
@@ -191,7 +186,21 @@ export default {
       currentPayOrder: null
     }
   },
+  
   created() {
+    const userid = this.$store.getters.userId;
+    // 获取所有订单
+    axios.post('http://localhost:8081/order/getOrdervo', {
+      user_id: userid
+    })
+    .then(response => {
+      this.orders = response.data;
+    })
+    .catch(error => {
+      this.$message.error('获取订单列表失败');
+      console.error('Error fetching orders:', error);
+    });
+
     // 获取路由中的订单ID
     const orderId = this.$route.query.orderId;
     if (orderId) {
@@ -200,9 +209,43 @@ export default {
     }
   },
   methods: {
+    
     handleTabClick(tab) {
-      console.log('切换标签：', tab.name)
-      // 这里可以根据标签筛选订单
+      const status = tab.name;
+      const userid = this.$store.getters.userId;
+      
+      // 先获取所有订单
+      axios.post('http://localhost:8081/order/getOrdervo', {
+        user_id: userid
+      })
+      .then(response => {
+        if (response.data) {
+          // 根据标签名筛选订单
+          if (status === 'all') {
+            this.orders = response.data;
+          } else {
+            // 根据不同状态筛选
+            this.orders = response.data.filter(order => {
+              switch(status) {
+                case 'unpaid':
+                  return order.status === 'pending';
+                case 'unreceive':
+                  return order.status === 'delivered';
+                case 'completed':
+                  return order.status === 'completed';
+                case 'cancelled':
+                  return order.status === 'cancelled';
+                default:
+                  return true;
+              }
+            });
+          }
+        }
+      })
+      .catch(error => {
+        this.$message.error('获取订单列表失败');
+        console.error('Error fetching orders:', error);
+      });
     },
     async payOrder(order) {
       this.currentPayOrder = order;
@@ -216,7 +259,7 @@ export default {
       try {
         /*// 调用后端接口获取支付链接
         const response = await this.$axios.post('/order/pay', {
-          orderId: this.currentPayOrder.id,
+          orderId: this.currentPayOrder.order_id,
           amount: this.currentPayAmount,
           payMethod: method
         });
@@ -228,11 +271,11 @@ export default {
         });
         
         // 开始轮询支付状态
-        this.startCheckPayStatus(this.currentPayOrder.id);*/
+        this.startCheckPayStatus(this.currentPayOrder.order_id);*/
         this.showPayDialog = true;
         const testPayUrl = method === 'wechat' 
-          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.id}_${this.currentPayAmount}` 
-          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.id}&amount=${this.currentPayAmount}`;
+          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.order_id}_${this.currentPayAmount}` 
+          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.order_id}&amount=${this.currentPayAmount}`;
 
         // 在对话框显示后生成二维码，并设置不同的颜色
         this.$nextTick(() => {
@@ -276,7 +319,7 @@ export default {
       try {
         // 调用后端验证支付状态
         const response = await this.$axios.post('http://localhost:8081/order/pay', {
-          order_id: this.currentPayOrder.id,
+          order_id: this.currentPayOrder.order_id,
           payment_method:this.payTypeText
         });
         /*
@@ -292,8 +335,20 @@ export default {
         if (response.status === 201) {
           this.$message.success('支付成功！');
           this.showPayDialog = false;
-          // 更新订单状态
-          this.currentPayOrder.status = '待发货';
+          
+          // 更新当前订单的状态
+          const orderIndex = this.orders.findIndex(o => o.order_id === this.currentPayOrder.order_id);
+          if (orderIndex !== -1) {
+            // 使用 Vue.set 确保视图更新
+            this.$set(this.orders[orderIndex], 'status', 'delivered');
+          }
+          
+          // 重新获取最新的订单列表
+          const ordersResponse = await this.$axios.post('http://localhost:8081/order/getOrdervo');
+          if (ordersResponse.data) {
+            this.orders = ordersResponse.data;
+          }
+          
           this.stopCheckPayStatus();
         } else {
           this.$message.warning('未检测到支付，请确认是否已完成支付');
@@ -325,15 +380,52 @@ export default {
         this.payStatusTimer = null;
       }
     },
-    confirmReceive(order) {
-      console.log('确认收货：', order.id)
+    async confirmReceive(order) {
+      try {
+        // 弹出确认对话框
+        await this.$confirm('是否确认收到商品？', '确认收货', {
+          confirmButtonText: '确认',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+        
+        // 用户点击确认后，发送请求
+        const response = await axios.post('http://localhost:8081/order/received', {
+          order_id: order.order_id
+        });
+        
+        if (response.status === 201) {
+          this.$message.success('确认收货成功');
+          
+          // 更新订单状态
+          const orderIndex = this.orders.findIndex(o => o.order_id === order.order_id);
+          if (orderIndex !== -1) {
+            this.$set(this.orders[orderIndex], 'status', 'completed');
+          }
+          
+          // 重新获取订单列表
+          const ordersResponse = await axios.post('http://localhost:8081/order/getOrdervo', {
+            user_id: this.$store.getters.userId
+          });
+          if (ordersResponse.data) {
+            this.orders = ordersResponse.data;
+          }
+        }
+      } catch (error) {
+        if (error === 'cancel') {
+          // 用户点击取消，不做处理
+          return;
+        }
+        this.$message.error('确认收货失败，请稍后重试');
+        console.error('确认收货失败:', error);
+      }
     },
     reviewOrder(order) {
       this.$router.push({
         name: 'user-review',
         query: {
-          orderId: order.id,
-          productId: order.products[0].id // 如果一个订单只有一个商品
+          orderId: order.order_id,
+          productId: order.product_id
         }
       });
     },
@@ -378,6 +470,15 @@ export default {
         console.error('添加到购物车失败:', error);
       }
     }*/
+    getStatusText(status) {
+      const statusMap = {
+        'pending': '待付款',
+        'delivered': '待收货',
+        'cancelled': '已取消',
+        'completed': '已完成'
+      }
+      return statusMap[status] || status
+    }
   },
   beforeDestroy() {
     this.stopCheckPayStatus();
@@ -385,7 +486,7 @@ export default {
     if (this.qrCodeInstance) {
       this.qrCodeInstance.clear();
     }
-  }
+  },
 }
 </script>
 
