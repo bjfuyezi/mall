@@ -399,7 +399,7 @@ export default {
       try {
         /*// 调用后端接口获取支付链接
         const response = await this.$axios.post('/order/pay', {
-          orderId: this.currentPayOrder.id,
+          orderId: this.currentPayOrder.order_id,
           amount: this.currentPayAmount,
           payMethod: method
         });
@@ -411,11 +411,11 @@ export default {
         });
         
         // 开始轮询支付状态
-        this.startCheckPayStatus(this.currentPayOrder.id);*/
+        this.startCheckPayStatus(this.currentPayOrder.order_id);*/
         this.showPayDialog = true;
         const testPayUrl = method === 'wechat' 
-          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.id}_${this.currentPayAmount}` 
-          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.id}&amount=${this.currentPayAmount}`;
+          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.order_id}_${this.currentPayAmount}` 
+          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.order_id}&amount=${this.currentPayAmount}`;
 
         // 在对话框显示后生成二维码，并设置不同的颜色
         this.$nextTick(() => {
@@ -460,7 +460,7 @@ export default {
       try {
         // 调用后端验证支付状态
         const response = await this.$axios.post('http://localhost:8081/order/pay', {
-          order_id: this.currentPayOrder.id,
+          order_id: this.currentPayOrder.order_id,
           payment_method:this.payTypeText
         });
         /*

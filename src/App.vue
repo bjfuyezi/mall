@@ -39,6 +39,7 @@
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
               <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+              <el-dropdown-item command="comment">我的评价</el-dropdown-item>
               <el-dropdown-item command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
@@ -94,6 +95,9 @@ export default {
           break;
         case 'orders':
           this.$router.push('/user/orders');
+          break;
+        case 'comment':
+          this.$router.push('/user/comments');
           break;
         case 'logout':
           this.$store.dispatch('logout');

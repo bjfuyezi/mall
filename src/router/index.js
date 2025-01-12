@@ -70,6 +70,11 @@ const routes = [
     component: () => import('../views/usermodel/UserComment.vue')
   },
   {
+    path: '/user/comments',
+    name: 'user-comments',
+    component: () => import('../views/usermodel/UserCommentList.vue')
+  },
+  {
     path: '/shopmodel/asshop',
     name: 'shop-asshop',
     component: () => import('../views/shopmodel/AsshopView.vue')
