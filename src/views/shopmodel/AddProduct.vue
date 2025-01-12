@@ -113,9 +113,11 @@ export default {
   created() {
     // 页面加载时获取店铺信息
     this.fetchShopIdByUserId();
+    this.user_id=this.$store.getters.userId;
   },
   methods: {
     async fetchShopIdByUserId() {
+      this.user_id=this.$store.getters.userId;
       try {
         const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
         if ( shopResponse.data ) {
@@ -141,6 +143,7 @@ export default {
       }
     },
     handleImageUpload(event, index) {
+      this.user_id=this.$store.getters.userId;
       const file = event.target.files[0];
 
       if (file) {
@@ -166,6 +169,7 @@ export default {
       this.product.images.splice(index, 1);
     },
     async submitForm() {
+      this.user_id=this.$store.getters.userId;
       // 准备表单数据
       const formData = new FormData();
       formData.append('name', this.product.name);

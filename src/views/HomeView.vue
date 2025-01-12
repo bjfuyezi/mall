@@ -31,9 +31,9 @@
     <div class="products-section" ref="productsSection">
       <h2>热门商品</h2>
       <div class="products-grid">
-        <div class="product-card" v-for="product in products" :key="product.id">
+        <div class="product-card" v-for="product in this.showProducts" :key="product.product_id">
           <div class="product-image">
-            <img :src="product.imagePath" alt="Product">
+            <img :src="'http://localhost:8081'+product.picture_id[0]" alt="Product" style="width: 200px; height: 200px; object-fit: cover;">
           </div>
           <div class="product-info">
             <h3>{{ product.name }}</h3>
@@ -46,6 +46,161 @@
     </div>
   </div>
 </template>
+
+<script>
+import axios from 'axios';
+import VueSlickCarousel from 'vue-slick-carousel';
+
+export default {
+  name: 'HomeView',
+  components: {
+      VueSlickCarousel,
+  },
+  data() {
+    return {
+      banners: [], // 存储轮播图的数据
+      products: [], // 存储商品的数据
+      showProducts: [], // 展示用的数据
+      page: 1, // 当前页码
+      loadingMore: false, // 是否正在加载更多商品
+      showBanner: true,
+      bannerOffset: 0, // 新增：用于跟踪广告偏移量
+      categories: [
+        { label: '全部', value: 'all' },
+        { label: '生鲜食品', value: 'fresh' },
+        { label: '零食小吃', value: 'snack' },
+        { label: '酒水饮料', value: 'drink' },
+        { label: '干货腌货', value: 'dry' },
+        { label: '即食食品', value: 'instant' },
+        { label: '农产品', value: 'green' }
+        // 添加更多类别...
+      ],
+      settings: {
+        dots: true,
+        infinite: true,
+        speed: 500, // 过渡动画速度
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        autoplay: true,
+        autoplaySpeed: 2000, // 每张图片展示时间，例如5秒
+        lazyLoad: 'ondemand', // 按需懒加载图片
+      },
+      selectedCategory: 'all', // 默认选中的类别
+    };
+  },
+  created() {
+    this.fetchBanners();
+    this.fetchProducts();
+  },
+  methods: {
+    async fetchBanners() {
+      try {
+        const response = await axios.get('http://localhost:8081/advertise/banner');
+        this.banners = response.data;
+
+        // 销毁并重新初始化轮播图
+        this.$nextTick(() => {
+          if (this.$refs.carousel) {
+            this.$refs.carousel.destroy(); // 销毁当前实例
+            this.$nextTick(() => {
+              this.$refs.carousel.init(); // 重新初始化
+              this.$refs.carousel.play(); // 启动自动播放
+            });
+          }
+        });
+      } catch (error) {
+        console.error('获取轮播图失败:', error);
+      }
+    },
+    async fetchProducts() {
+      try {
+        this.loadingMore = true;
+
+        // 动态设置 pageSize
+        // const pageSize = this.page === 1 ? 4 : 8;
+        // let newProducts = Array.from({ length: pageSize }, (element, index) => ({
+        //   imagePath: 'test.jpg',
+        //   name: 'aaa',
+        //   price: '12',
+        //   id: `${this.page}-${index}`, // 确保每个产品有一个唯一的 ID
+        // }));
+
+        // 实际请求请取消注释下面的代码，并移除模拟数据部分
+        
+        const response = await axios.post('http://localhost:8081/product/selectAll',{});
+        if (response.data != null) {
+          this.products = response.data;
+        }
+        for (let p of this.products) {
+          const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:p.picture_id});
+          if ( picResponse.data != null ) {
+            p.picture_id = picResponse.data;
+          }
+        }
+        this.showProducts = this.products;
+        // 将新获取的商品追加到现有商品列表中
+        // this.products.push(...newProducts);
+
+        if (this.page === 1) {
+          // 如果是第一页，模拟有广告的情况，减少商品数量
+          this.products = this.products.slice(0, 4);
+          this.showProducts = this.showProducts.slice(0, 4);
+        }
+
+        this.page++;
+        this.loadingMore = false;
+      } catch (error) {
+        console.error('获取商品失败:', error);
+        this.loadingMore = false;
+      }
+    },
+    handleScroll() {
+      if (this.$refs.productsSection && !this.loadingMore) {
+        // 计算页面是否接近底部
+        const isNearBottom =
+          window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 50;
+          //console.log(window.innerHeight,document.documentElement.scrollTop,document.documentElement.offsetHeight,"\n")
+        // 如果接近页面底部且不在加载状态，则加载更多商品
+        if (isNearBottom) {
+          this.fetchProducts();
+        }
+      }
+    },
+    selectCategory(value) {
+      this.selectedCategory = value; 
+      this.page = 1;
+      if ( value != 'all') {
+        this.showProducts = this.products.filter(product => product.category === this.selectedCategory); // 请求新类别下的产品
+      } else {
+        this.showProducts = this.products;
+      }
+    },
+    goToDetail(product) {
+      this.$router.push({
+        name: 'product',
+        params: { id: product.product_id },
+        state: { product }
+      });
+    },logSlideChange(index) {
+    console.log('当前幻灯片索引:', index);
+    console.log('当前幻灯片数据:', this.banners[index]);
+  },
+  },
+  mounted() {
+        this.$nextTick(() => {
+      window.addEventListener('scroll', this.handleScroll);
+
+       // 确保组件已挂载并且所有图片都加载完毕后启动自动播放
+    if (this.$refs.carousel && this.banners.length > 0) {
+      this.$refs.carousel.play();
+    }
+    });
+  },
+  beforeDestroy() {
+    window.removeEventListener('scroll', this.handleScroll);
+  },
+};
+</script>
 
 <style lang="scss" scoped>
 .home {
@@ -194,143 +349,3 @@
   }
 }
 </style>
-
-<script>
-import axios from 'axios';
-import VueSlickCarousel from 'vue-slick-carousel';
-
-export default {
-  name: 'HomeView',
-  components: {
-      VueSlickCarousel,
-  },
-  data() {
-    return {
-      banners: [], // 存储轮播图的数据
-      products: [], // 存储商品的数据
-      page: 1, // 当前页码
-      loadingMore: false, // 是否正在加载更多商品
-      showBanner: true,
-      bannerOffset: 0, // 新增：用于跟踪广告偏移量
-      categories: [
-        { label: '全部', value: 'all' },
-        { label: '电子产品', value: 'electronics' },
-        { label: '家居用品', value: 'household' },
-        { label: '书籍', value: 'books' },
-        // 添加更多类别...
-      ],
-settings: {
-  dots: true,
-  infinite: true,
-  speed: 500, // 过渡动画速度
-  slidesToShow: 1,
-  slidesToScroll: 1,
-  autoplay: true,
-  autoplaySpeed: 2000, // 每张图片展示时间，例如5秒
-  lazyLoad: 'ondemand', // 按需懒加载图片
-},
-      selectedCategory: 'all', // 默认选中的类别
-    };
-  },
-  created() {
-    this.fetchBanners();
-    this.fetchProducts();
-  },
-  methods: {
-    async fetchBanners() {
-  try {
-    const response = await axios.get('http://localhost:8081/advertise/banner');
-    this.banners = response.data;
-
-    // 销毁并重新初始化轮播图
-    this.$nextTick(() => {
-      if (this.$refs.carousel) {
-        this.$refs.carousel.destroy(); // 销毁当前实例
-        this.$nextTick(() => {
-          this.$refs.carousel.init(); // 重新初始化
-          this.$refs.carousel.play(); // 启动自动播放
-        });
-      }
-    });
-  } catch (error) {
-    console.error('获取轮播图失败:', error);
-  }
-},
-    async fetchProducts() {
-      try {
-        this.loadingMore = true;
-
-        // 动态设置 pageSize
-        const pageSize = this.page === 1 ? 4 : 8;
-        let newProducts = Array.from({ length: pageSize }, (element, index) => ({
-          imagePath: 'test.jpg',
-          name: 'aaa',
-          price: '12',
-          id: `${this.page}-${index}`, // 确保每个产品有一个唯一的 ID
-        }));
-
-        // 实际请求请取消注释下面的代码，并移除模拟数据部分
-        /*
-        const response = await axios.get(`/api/products?page=${this.page}&pageSize=${pageSize}&category=${this.selectedCategory}`);
-        newProducts = response.data;
-        */
-
-        // 将新获取的商品追加到现有商品列表中
-        this.products.push(...newProducts);
-
-        if (this.page === 1) {
-          // 如果是第一页，模拟有广告的情况，减少商品数量
-          this.products = this.products.slice(0, 4);
-        }
-
-        this.page++;
-        this.loadingMore = false;
-      } catch (error) {
-        console.error('获取商品失败:', error);
-        this.loadingMore = false;
-      }
-    },
-    handleScroll() {
-      if (this.$refs.productsSection && !this.loadingMore) {
-        // 计算页面是否接近底部
-        const isNearBottom =
-          window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 50;
-          //console.log(window.innerHeight,document.documentElement.scrollTop,document.documentElement.offsetHeight,"\n")
-        // 如果接近页面底部且不在加载状态，则加载更多商品
-        if (isNearBottom) {
-          this.fetchProducts();
-        }
-      }
-    },
-    selectCategory(value) {
-      this.selectedCategory = value;
-      this.page = 1;
-      this.products = []; // 清空现有产品列表
-      this.fetchProducts(); // 请求新类别下的产品
-    },
-    goToDetail(product) {
-      this.$router.push({
-        name: 'product',
-        params: { id: product.id },
-        state: { product }
-      });
-    },logSlideChange(index) {
-    console.log('当前幻灯片索引:', index);
-    console.log('当前幻灯片数据:', this.banners[index]);
-  },
-  },
-  mounted() {
-        this.$nextTick(() => {
-      window.addEventListener('scroll', this.handleScroll);
-
-       // 确保组件已挂载并且所有图片都加载完毕后启动自动播放
-    if (this.$refs.carousel && this.banners.length > 0) {
-      this.$refs.carousel.play();
-    }
-    });
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScroll);
-  },
-};
-</script>

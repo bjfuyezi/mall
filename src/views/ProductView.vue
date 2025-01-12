@@ -6,7 +6,7 @@
         <!-- 商品主要信息 -->
         <div class="product-main">
           <div class="product-gallery">
-            <img :src="product.mainImage" :alt="product.name">
+            <img :src="'http://localhost:8081'+product.picture_id[0]" :alt="product.name">
           </div>
           <div class="product-info">
             <h1>{{ product.name }}</h1>
@@ -17,7 +17,7 @@
               </span>
             </div>
             <div class="product-stats">
-              <span>销量 {{ product.sales }}</span>
+              <span>销量 {{ product.salenum }}</span>
               <span>评价 {{ product.reviews }}</span>
               <span>收藏 {{ product.favorites }}</span>
             </div>
@@ -109,51 +109,35 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'ProductView',
   data() {
     return {
+      product_id: '',
       activeTab: 'description',
       quantity: 1,
       isFavorite: false,
-      product: {
-        id: 1,
-        name: '示例商品',
-        price: 999,
-        originalPrice: 1299,
-        mainImage: 'https://via.placeholder.com/400x400',
-        sales: 1000,
-        reviews: 500,
-        favorites: 200,
-        stock: 100,
-        description: '<p>这里是商品详细介绍...</p>',
-        reviewList: []
-      },
+      product: {},
       hotProducts: []
     }
   },
   async created() {
     try {
       // 从路由获取商品ID
-      const productId = this.$route.params.id;
+      this.product_id = this.$route.params.id;
       
       // 请求商品详情
-      const response = await this.$axios.get(`http://localhost:8081/product/show?id=${productId}`);
-      
-      if (response.data.code === 200) {
+      const response = await axios.post(`http://localhost:8081/product/selectById`,{id:this.product_id});
+
+      if (response.status === 200) {
         // 合并API返回的数据和默认数据
-        this.product = {
-          ...this.product,
-          id: response.data.data.id,
-          name: response.data.data.name,
-          price: response.data.data.price,
-          mainImage: response.data.data.image || this.product.mainImage,
-          description: response.data.data.description || this.product.description,
-          stock: response.data.data.stock,
-          sales: response.data.data.sales || 0,
-          reviews: response.data.data.reviews || 0,
-          favorites: response.data.data.favorites || 0
-        };
+        this.product = response.data;
+        const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:this.product.picture_id});
+          if ( picResponse.data != null ) {
+            this.product.picture_id = picResponse.data;
+          }
       } else {
         throw new Error(response.data.message || '获取商品信息失败');
       }
