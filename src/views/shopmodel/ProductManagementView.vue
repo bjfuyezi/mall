@@ -291,10 +291,12 @@
     created() {
       console.log('商品数据加载完成');
       this.getProducts();
+      this.user_id=this.$store.getters.userId;
     },
     methods: {
       // 上传成功后的回调函数
       handleImageUploadSuccess(response, file, fileList) {
+        this.user_id=this.$store.getters.userId;
         let imageId = response.data;
         console.log(fileList);
         imageId = file.response;
@@ -312,6 +314,7 @@
         this.updatedProduct.images.splice(index, 1);
       },
       async submitUpdate() {
+        this.user_id=this.$store.getters.userId;
         // 准备表单数据
         const formData = new FormData();
         formData.append('name', this.updatedProduct.name);
@@ -335,6 +338,7 @@
         }
       },
       async getProducts() {
+        this.user_id=this.$store.getters.userId;
         const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
         if ( shopResponse.data != null ) {
           this.shop_id = shopResponse.data.shop_id;

@@ -105,10 +105,12 @@ export default {
   created() {
     // 页面加载时获取店铺信息
     this.fetchShopDetails();
+    this.user_id=this.$store.getters.userId;
   },
   methods: {
   // 获取店铺信息
     async fetchShopDetails() {
+      this.user_id=this.$store.getters.userId;
       this.isProcessing = true;
       try {
         const response = await axios.post('http://localhost:8081/shop/getByUser_id', {id:this.user_id});
@@ -148,6 +150,7 @@ export default {
     },
     // 切换店铺状态（开业/歇业）
     toggleShopStatus() {
+      this.user_id=this.$store.getters.userId;
       if (this.isProcessing) return;
       this.isProcessing = true;
       this.shopStatus = this.shopStatus === 'closed' ? 'open' : 'closed';
@@ -165,6 +168,7 @@ export default {
 
     // 注销店铺
     closeShop() {
+      this.user_id=this.$store.getters.userId;
       if (this.isProcessing) return;
       this.isProcessing = true;
       axios.post('http://localhost:8081/shop/deleteShop', {id:this.shopInfo.shop_id})
@@ -181,6 +185,7 @@ export default {
 
     // 提交修改店铺信息申请
     submitForm() {
+      this.user_id=this.$store.getters.userId;
       if (this.isProcessing) return;
       this.isProcessing = true;
       // 提交表单前先检查必要字段

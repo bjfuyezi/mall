@@ -76,7 +76,7 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      user_id: 1,   // session的用户id，还没写
+      user_id: '',   // session的用户id，还没写
       statusMessage: '',
       form: {
         shop_name: '',
@@ -121,11 +121,13 @@ export default {
   },
   created() {
     this.checkShopStatus();
+    this.user_id = this.$store.getters.userId;
   },
   methods: {
     async checkShopStatus() {
+      this.user_id = this.$store.getters.userId;
       // 如果没有找到 user_id，则跳转到登录页面
-      if (!this.user_id) {
+      if (this.user_id===null) {
         this.$router.push('/login'); // 使用 Vue Router 跳转到登录页面
       } else {
         // 如果 user_id 存在，则向后端查询 shop_status
@@ -160,6 +162,7 @@ export default {
       }
     },
     handleFileUpload(event) {
+      this.user_id = this.$store.getters.userId;
       const file = event.target.files[0];
 
       if (file) {
@@ -182,6 +185,7 @@ export default {
       }
     },
     async handleSubmit() {
+      this.user_id = this.$store.getters.userId;
       // 提交表单前先检查必要字段
       if (!this.form.shop_name || !this.form.shop_description || !this.form.province || !this.form.pictures) {
         alert('请填写所有必要的字段并上传图片');
