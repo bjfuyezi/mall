@@ -28,7 +28,7 @@
   
             <div class="order-products">
               <div class="product-item">
-                <img :src="order.product_image" :alt="order.product_name">
+                <img :src="`http://localhost:8081${order.url}`" :alt="order.product_name">
                 <div class="product-info">
                   <h4>{{ order.product_name }}</h4>
                   <div class="product-price">
