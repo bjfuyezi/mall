@@ -13,9 +13,9 @@
       <div class="cart-main" v-if="cartItems.length > 0">
         <!-- 表头 -->
         <div class="cart-table-header">
-          <el-checkbox 
-            v-model="selectAll"
-            @change="handleSelectAll"
+          <el-checkbox
+              v-model="selectAll"
+              @change="handleSelectAll"
           >全选</el-checkbox>
           <span class="column-product">商品信息</span>
           <span class="column-price">单价</span>
@@ -26,18 +26,18 @@
 
         <!-- 商品列表 -->
         <div class="cart-items">
-          <div 
-            v-for="item in cartItems" 
-            :key="item.id"
-            class="cart-item"
-            :class="{ 'item-invalid': !item.available }"
+          <div
+              v-for="item in cartItems"
+              :key="item.id"
+              class="cart-item"
+              :class="{ 'item-invalid': !item.available }"
           >
-            <el-checkbox 
-              v-model="item.selected"
-              :disabled="!item.available"
-              @change="handleItemSelect(item)"
+            <el-checkbox
+                v-model="item.selected"
+                :disabled="!item.available"
+                @change="handleItemSelect(item)"
             ></el-checkbox>
-            
+
             <div class="item-product">
               <img :src="item.image" :alt="item.name">
               <div class="product-info">
@@ -53,12 +53,12 @@
             </div>
 
             <div class="item-quantity">
-              <el-input-number 
-                v-model="item.quantity" 
-                :min="1" 
-                :max="item.stock"
-                :disabled="!item.available"
-                @change="handleQuantityChange(item)"
+              <el-input-number
+                  v-model="item.quantity"
+                  :min="1"
+                  :max="item.stock"
+                  :disabled="!item.available"
+                  @change="handleQuantityChange(item)"
               ></el-input-number>
             </div>
 
@@ -83,9 +83,9 @@
       <!-- 购物车底部 -->
       <div class="cart-footer" v-if="cartItems.length > 0">
         <div class="footer-left">
-          <el-checkbox 
-            v-model="selectAll"
-            @change="handleSelectAll"
+          <el-checkbox
+              v-model="selectAll"
+              @change="handleSelectAll"
           >全选</el-checkbox>
           <el-button type="text" @click="batchDelete">删除选中商品</el-button>
           <el-button type="text" @click="batchMoveToFavorite">移入收藏夹</el-button>
@@ -97,11 +97,11 @@
               合计：<span>¥{{ totalPrice.toFixed(2) }}</span>
             </div>
           </div>
-          <el-button 
-            type="primary" 
-            size="large"
-            :disabled="selectedCount === 0"
-            @click="checkout"
+          <el-button
+              type="primary"
+              size="large"
+              :disabled="selectedCount === 0"
+              @click="checkout"
           >
             立即结算
           </el-button>
@@ -157,8 +157,8 @@ export default {
   computed: {
     selectAll: {
       get() {
-        return this.cartItems.length > 0 && 
-               this.cartItems.every(item => !item.available || item.selected)
+        return this.cartItems.length > 0 &&
+            this.cartItems.every(item => !item.available || item.selected)
       },
       set(value) {
         this.cartItems.forEach(item => {
@@ -182,20 +182,20 @@ export default {
   },
   methods: {
     handleSelectAll() {
-      
+
     },
     handleItemSelect() {
-      
+
     },
     handleQuantityChange(item) {
       // 处理数量变化
       console.log('数量变化：', item)
     },
     removeItem() {
-      
+
     },
     batchDelete() {
-      
+
     },
     batchMoveToFavorite() {
       // 批量移入收藏夹
@@ -398,4 +398,4 @@ export default {
     margin-top: 20px;
   }
 }
-</style> 
+</style>

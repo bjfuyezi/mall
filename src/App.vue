@@ -24,9 +24,9 @@
             <i class="el-icon-s-order"></i>
             <span>我的订单</span>
           </router-link>
-          <router-link to="/cart" class="action-item">
+          <router-link to="/user/cart" class="action-item">
             <i class="el-icon-shopping-cart-2"></i>
-            <span>购物车</span>
+            <span>我的购物车</span>
           </router-link>
           <template v-if="!isAuthenticated">
             <router-link to="/login" class="action-item">登录</router-link>
@@ -55,6 +55,7 @@
             <router-link to="/hot" class="nav-item">热卖</router-link>
             <router-link to="/promotion" class="nav-item">优惠</router-link>
             <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
+            <!--   下面三个部分应该是需要判断是否是商家才可以有的吧     -->
             <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
             <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
             <router-link to="/shopmodel/productManage" class="nav-item">管理商品</router-link>
@@ -99,7 +100,7 @@ export default {
         case 'comment':
           this.$router.push('/user/comments');
           break;
-        case 'logout':
+        case 'logout':/*这里退出应该需要清除store里的数据，不知道有没有清理掉*/
           this.$store.dispatch('logout');
           this.$message.success('已退出登录');
           this.$router.push('/login');
