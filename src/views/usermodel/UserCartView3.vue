@@ -5,9 +5,9 @@
       <div class="cart-header">
         <h2>我的购物车</h2>
         <!-- 清除失效商品按钮 -->
-        <el-button type="text" @click="clearInvalidItems">
-          <i class="el-icon-delete"></i> 清除失效商品
-        </el-button>
+<!--        <el-button type="text" @click="clearInvalidItems">-->
+<!--          <i class="el-icon-delete"></i> 清除失效商品-->
+<!--        </el-button>-->
       </div>
 
       <!-- 购物车主体，若购物车有商品 -->
@@ -17,13 +17,16 @@
         <el-table :data="flattenedCartData" border stripe style="width: 100%" v-loading="loading">
           <!-- 全选 -->
           <!-- 表格列，类型为选择框，宽度为55px，内容居中对齐，启用可选择功能，是否可选由isSelectable函数决定 -->
-          <el-table-column type="selection" width="55" align="center" :selectable="isSelectable" />
+<!--          <el-table-column type="selection" width="55" align="center" :selectable="isSelectable"-->
+<!--                           v-model="selectAll"/>-->
+          <el-table-column type="selection" width="55" align="center" :selectable="isSelectable"
+                           v-model="selectAll"/>
           <!-- 商品信息 -->
           <el-table-column label="商品信息">
             <template slot-scope="scope">
               <div v-if="scope.row.isShop">
                 <!-- 商铺复选框 -->
-                <el-checkbox v-model="scope.row.checked" @change="toggleShopSelection(scope.row)">
+                <el-checkbox v-model="scope.row.selected" @change="toggleShopSelection(scope.row)">
                   {{ scope.row.shop_name }}
                 </el-checkbox>
               </div>
@@ -92,9 +95,9 @@
 
       <!-- 底部操作栏 -->
       <div class="cart-footer" v-if="cartData.length > 0">
-        <el-checkbox v-model="allChecked" @change="toggleAllSelection">
-          全选
-        </el-checkbox>
+<!--        <el-checkbox v-model="allChecked" @change="toggleAllSelection">-->
+<!--          全选-->
+<!--        </el-checkbox>-->
         <div class="cart-summary">
           已选择 {{ selectedCount }} 件商品，总计：¥{{ totalAmount.toFixed(2) }}
         </div>
@@ -114,7 +117,7 @@ export default {
     return {
       user_id:null,
       // 假设扁平化后的数据已经存储在 flattenedCartData 中
-      // flattenedCartData: [],
+      flattenedCartData: [],
       cartData : [], // 原始购物车数据
       /*预期要有的数据：
       * 用户购物车id：cart_item_id【√】
@@ -137,19 +140,20 @@ export default {
   computed: {
     // 将购物车数据扁平化
     flattening() {
-      const flattenedData = [];
+      // const flattenedData = [];
+      const data = [];
       this.cartData.forEach(shop => {
         // 先处理店铺数据
-        flattenedData.push({
+        data.push({
           isShop: true, // 标记这是店铺数据
-          checked:false,
+          selected:false,
           shop_id: shop.shop_id,
           shop_name: shop.shop_name,
         });
 
         // 再处理店铺里的商品项
         shop.items.forEach(item => {
-          flattenedData.push({
+          data.push({
             isShop: false, // 标记这是商品数据
             shop_id: shop.shop_id, // 店铺ID
             shop_name: shop.shop_name, // 店铺名称
@@ -168,48 +172,60 @@ export default {
           });
         });
       });
-      return flattenedData;
+      return data;
+    },
+
+    selectAll: {
+      // 计算属性的getter方法，获取购物车所有项的选中状态
+      get() {
+        return this.flattenedCartData.length > 0 && // 购物车必须非空
+            this.flattenedCartData.every(item => { // 确保所有项都满足特定条件
+              if (item.isShop) { // 如果是店铺项
+                return item.selected; // 店铺项必须被选中
+              } else { // 如果是商品项
+                return !item.available || item.selected; // 商品项要么不可用，要么被选中
+              }
+            });
+      },
+      // 计算属性的setter方法，设置所有商品和店铺项的选中状态
+      set(value) {
+        this.flattenedCartData.forEach(item => {
+          // 如果是店铺项，或者是商品项且商品项是可用的
+          if (item.isShop || (!item.isShop && item.available)) {
+            item.selected = value; // 设置选中状态为传入的value值
+          }
+        });
+      }
     },
     // 全选状态
     allChecked() {
-      return this.cartData.every((shop) =>
-          shop.checked || shop.items.every((item) => item.checked)
-      );
+      return this.flattenedCartData
+          .filter(item => !item.isShop) // 只处理商品项，排除店铺项
+          .every(item => item.selected); // 检查每个商品项的selected字段是否为true
     },
     // 总金额
     totalAmount() {
-      return this.cartData.reduce((total, shop) => {
-        return (
-            total +
-            shop.items.reduce((shopTotal, item) => {
-              if (item.checked) {
-                return shopTotal + item.price * item.quantity;
-              }
-              return shopTotal;
-            }, 0)
-        );
-      }, 0);
+      return this.flattenedCartData
+          .filter(item => !item.isShop && item.selected) // 只处理已选中的商品项
+          .reduce((total, item) => total + item.price * item.quantity, 0); // 计算总金额
     },
     // 已选择商品数量
     selectedCount() {
-      return this.cartData.reduce((count, shop) => {
-        return count + shop.items.filter((item) => item.checked).length;
-      }, 0);
+      return this.flattenedCartData
+          .filter(item => !item.isShop && item.selected) // 只处理已选中的商品项
+          .length;
     },
   },
   methods: {
     // 切换店铺选中状态
-    toggleShopSelection(shop) {
-      this.cartData.forEach((store) => {
-        if (store.shop_id === shop.shop_id) {
-          store.items.forEach((item) => {
-            item.checked = shop.checked;
-          });
-        }
-      });
+    toggleShopSelection(row) {
+      this.flattenedCartData
+          .filter(item => !item.isShop && item.shop_id===row.shop_id)
+          .forEach(item => item.selected=row.selected)
     },
     // 更新全选状态
     toggleAllSelection() {
+
       this.cartData.forEach((shop) => {
         shop.checked = this.allChecked;
         shop.items.forEach((item) => {
@@ -232,7 +248,7 @@ export default {
     },
     // 结算
     checkout() {
-      console.log("结算");
+      // console.log("结算");
     },
     // 检测行是否可选
     // isSelectable 函数，返回一个布尔值，判断当前行是否可以被选择。
@@ -250,11 +266,11 @@ export default {
           params: { user_id: this.user_id }
         });
         if (cartResponse.data != null) {
-          console.log("get回复："+cartResponse.data);
+          // console.log("get回复："+cartResponse.data);
           this.cartData = cartResponse.data;
           // 触发数据扁平化
           this.flattenedCartData = this.flattening;  // 直接调用计算属性
-          console.log("扁平化数据："+this.flattenedCartData);
+          // console.log("扁平化数据："+this.flattenedCartData);
         }
       } catch (error) {
         console.error("获取购物车数据失败", error);

@@ -144,7 +144,7 @@ const routes = [
   {//查看购物车
     path: '/user/cart',
     name: '我的购物车',
-    component: () => import('@/views/usermodel/UserCartView3.vue'),
+    component: () => import('@/views/usermodel/UserCartView.vue'),
     meta: { requiresAuth: true }
   },
   // 添加商品页
