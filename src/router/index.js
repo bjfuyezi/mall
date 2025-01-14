@@ -34,7 +34,7 @@ const routes = [
   // 促销活动页
   {
     path: '/promotion',
-    name: 'promotion',
+    name: '平台优惠',
     component: () => import('../views/PromotionView.vue')
   },
   // 登录页
@@ -145,6 +145,12 @@ const routes = [
     path: '/user/cart',
     name: '我的购物车',
     component: () => import('@/views/usermodel/UserCartView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {//查看购物车
+    path: '/user/coupon',
+    name: '我的优惠券',
+    component: () => import('@/views/usermodel/UserCouponView.vue'),
     meta: { requiresAuth: true }
   },
   // 添加商品页
