@@ -40,6 +40,8 @@
               <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
               <el-dropdown-item command="orders">我的订单</el-dropdown-item>
               <el-dropdown-item command="comment">我的评价</el-dropdown-item>
+              <el-dropdown-item command="product">商品收藏</el-dropdown-item>
+              <el-dropdown-item command="shop">店铺收藏与拉黑</el-dropdown-item>
               <el-dropdown-item command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
@@ -51,15 +53,17 @@
         <div class="nav-container">
           <div class="nav-left">
             <router-link to="/" class="nav-item">首页</router-link>
-            <router-link to="/new" class="nav-item">新品</router-link>
-            <router-link to="/hot" class="nav-item">热卖</router-link>
             <router-link to="/promotion" class="nav-item">优惠</router-link>
-            <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
+            <template v-if="isAuthenticated && currentUser.role === 'buyer'">
+              <router-link to="/shopmodel/asshop" class="nav-item">成为商家</router-link>
+            </template>
             <!--   下面三个部分应该是需要判断是否是商家才可以有的吧     -->
-            <router-link to="/shopmodel/shopManage" class="nav-item">店铺管理</router-link>
-            <router-link to="/shopmodel/info" class="nav-item">管理店铺信息</router-link>
-            <router-link to="/shopmodel/productManage" class="nav-item">管理商品</router-link>
-
+            <template v-if="isAuthenticated && currentUser.role === 'seller'">
+              <router-link to="/shopmodel/info" class="nav-item">店铺信息管理</router-link>
+              <router-link to="/shopmodel/productManage" class="nav-item">商品管理</router-link>
+              <router-link to="/shopmodel/promotionManage" class="nav-item">推广管理</router-link>
+              <router-link to="/shopmodel/couponManage" class="nav-item">优惠管理</router-link>
+            </template>
             <!-- 管理员页面按钮 -->
             <template v-if="isAuthenticated && currentUser.role === 'admin'">
               <router-link to="/admin" class="nav-item">管理员页面</router-link>
@@ -104,6 +108,12 @@ export default {
           this.$store.dispatch('logout');
           this.$message.success('已退出登录');
           this.$router.push('/login');
+          break;
+        case 'product':
+          this.$router.push('/star/productStar');
+          break;
+        case 'shop':
+        this.$router.push('/star/shopStar');
           break;
       }
     }

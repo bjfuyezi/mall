@@ -38,6 +38,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 export default {
   name: 'DashboardView',
   data() {
@@ -48,8 +49,18 @@ export default {
       totalProducts: 0
     }
   },
-  created() {
+  async created() {
     // TODO: 从后端获取统计数据
+    const proAddResponse = await axios.post('http://localhost:8081/shop/',{});
+    if ( proAddResponse.data != null) {
+      this.totalShops = proAddResponse.data.length;
+      this.pendingShops = proAddResponse.data.filter(product => product.status === 'waiting').length;
+    }
+    const proResponse = await axios.post('http://localhost:8081/product/',{});
+    if ( proResponse.data != null) {
+      this.totalProducts = proResponse.data.length;
+      this.pendingProducts = proResponse.data.filter(product => product.status === 'waiting').length;
+    }
   }
 }
 </script>

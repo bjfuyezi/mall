@@ -36,8 +36,8 @@
             </div>
             <div class="product-stats">
               <span>销量 {{ product.salenum }}</span><br/>
-              <span>评价 {{ product.reviews }}</span><br/>
-              <span>收藏 {{ product.favorites }}</span><br/>
+              <span>评价 {{ commentNum }}</span><br/>
+              <span>收藏 {{ starNum }}</span><br/>
               <span>地点 {{ product.location }}</span><br/>
               <span>所属店铺 {{ shop_name }}</span><br/>
             </div>
@@ -100,14 +100,14 @@
 
             <!-- 数量选择 -->
             <el-input-number 
-              v-model="quantity" 
+              v-model="this.quantity" 
               :min="1" 
               :max="maxQuantity"
               :disabled="!selectedFlavor"
             ></el-input-number>
           </div>
           <div class="action-buttons">
-            <el-button type="primary" @click="addToCart(this.quantity,this.selectedFlavor,this.product.product_id)">加入购物车</el-button>
+            <el-button type="primary" @click="addToCart()">加入购物车</el-button>
             <el-button @click="toggleFavorite">
               <i :class="isFavorite ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
               {{ isFavorite ? '已收藏' : '收藏' }}
@@ -145,6 +145,9 @@ export default {
   name: 'ProductView',
   data() {
     return {
+      user_id:'',
+      starNum: '',
+      commentNum:'',
       shop_name:'',
       selectedImage:'',
       product_id: '',
@@ -161,11 +164,12 @@ export default {
     try {
       // 从路由获取商品ID
       this.product_id = this.$route.params.id;
+      this.user_id=this.$store.getters.userId;
       
       // 请求商品详情
       const response = await axios.post(`http://localhost:8081/product/selectById`,{id:this.product_id});
 
-      if (response.status === 200) {
+      if (response.data != null) {
         // 合并API返回的数据和默认数据
         this.product = response.data;
         this.product.quantity = JSON.parse(this.product.quantity);
@@ -178,6 +182,18 @@ export default {
         if ( shopResponse.data != null ) {
             this.shop_name = shopResponse.data.shop_name;
           }
+        const starResponse = await axios.post('http://localhost:8081/product/getStarById', {id:this.product.product_id});
+        if ( starResponse.data != null ) {
+            this.starNum = starResponse.data;
+          }
+        const comResponse = await axios.post('http://localhost:8081/product/getCommentById', {id:this.product.product_id});
+        if ( comResponse.data != null ) {
+            this.commentNum = comResponse.data;
+          }
+        const sResponse = await axios.post('http://localhost:8081/product/isStar', {pid:this.product.product_id, uid:this.user_id});
+        if ( sResponse.data != null ) {
+          this.isFavorite = sResponse.data?true:false;
+        }
       } else {
         throw new Error(response.data.message || '获取商品信息失败');
       }
@@ -187,8 +203,11 @@ export default {
     }
   },
   methods: {
-    toShop(){
-
+    toShop(shop_id){
+      this.$router.push({
+          name: 'shop-show',
+          params: { id: shop_id }
+        });
     },
     // 更新购买数量的最大值
     updateMaxQuantity() {
@@ -200,13 +219,18 @@ export default {
     selectImage(image) {
       this.selectedImage = image;  // 点击缩略图时更新大图
     },
-    addToCart(quantity,selectedFlavor,product_id) {
-      console.log(quantity, selectedFlavor, product_id);
+    addToCart() {
+      console.log(this.quantity, this.selectedFlavor);
       this.$message.success('已添加到购物车')
     },
-    toggleFavorite() {
-      this.isFavorite = !this.isFavorite
+    async toggleFavorite() {
+      this.user_id=this.$store.getters.userId;
+      const sResponse = await axios.post('http://localhost:8081/product/changeStar', {pid:this.product.product_id, uid:this.user_id});
+      if ( sResponse.data != null ) {
+        this.isFavorite = !this.isFavorite
+      }
       this.$message.success(this.isFavorite ? '收藏成功' : '已取消收藏')
+      window.location.reload();
     },
     previewImage(_url) {
       this.$msgbox({
