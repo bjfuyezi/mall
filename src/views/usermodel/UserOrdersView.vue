@@ -249,9 +249,34 @@ export default {
       });
     },
     async payOrder(order) {
+    
       this.currentPayOrder = order;
-      this.currentPayAmount = order.totalAmount;
-      this.showPayMethodDialog = true;
+      const res = await axios.get('http://localhost:8081/alipay/pay',{
+              params:{
+                  id:order.order_id,
+                  price:order.totalAmount,
+                  flag:true
+              }
+          });
+          if(res.status == 200){
+            console.log(res.status);
+            let htmlContent = res.data;
+            let blob = new Blob([htmlContent], { type: 'text/html' });
+            let url = URL.createObjectURL(blob);
+            let newWindow =window.open(url, '_blank');
+
+            let ans =0 ;
+            while(newWindow && !newWindow.closed){
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 每秒检查一次
+              ans+=1;
+              if(ans>180){//3min自动关闭
+                newWindow.close();
+                break;
+              }
+            }
+            console.log('新窗口已关闭');
+          }
+
     },
     async selectPayMethod(method) {
       this.payMethod = method;
@@ -349,7 +374,6 @@ export default {
           if (ordersResponse.data) {
             this.orders = ordersResponse.data;
           }
-          
           this.stopCheckPayStatus();
         } else {
           this.$message.warning('未检测到支付，请确认是否已完成支付');
