@@ -39,6 +39,7 @@
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="userCenter">用户中心</el-dropdown-item>
               <el-dropdown-item command="orders">我的订单</el-dropdown-item>
+              <el-dropdown-item command="myCoupon">我的优惠券</el-dropdown-item>
               <el-dropdown-item command="comment">我的评价</el-dropdown-item>
               <el-dropdown-item command="product">商品收藏</el-dropdown-item>
               <el-dropdown-item command="shop">店铺收藏与拉黑</el-dropdown-item>
@@ -77,37 +78,45 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'  // 从 vuex 中导入 mapGetters，用于将 state 中的 getter 映射到组件的计算属性
 
 export default {
-  name: 'App',
+  name: 'App',  // 组件名称为 App
   data() {
     return {
-      searchKeyword: ''
+      searchKeyword: ''  // 初始化搜索关键词为空字符串
     }
   },
   computed: {
+    // 使用 mapGetters 将 vuex store 中的 getter 映射到当前组件的计算属性
+    // 'isAuthenticated' 和 'currentUser' 分别是 vuex store 中的 getter，用于获取用户认证状态和当前用户信息
     ...mapGetters(['isAuthenticated', 'currentUser'])
   },
   methods: {
+    // 处理搜索逻辑的方法
     handleSearch() {
-      console.log('搜索:', this.searchKeyword)
+      console.log('搜索:', this.searchKeyword)  // 在控制台输出搜索关键词
     },
+    // 处理命令的选择方法，根据传入的 command 执行不同的操作
     handleCommand(command) {
       switch(command) {
-        case 'userCenter':
-          this.$router.push('/user/center');
+        case 'userCenter':  // 如果命令是 'userCenter'
+          this.$router.push('/user/center');  // 跳转到用户中心页面
           break;
-        case 'orders':
-          this.$router.push('/user/orders');
+        case 'orders':  // 如果命令是 'orders'
+          this.$router.push('/user/orders');  // 跳转到用户订单页面
           break;
-        case 'comment':
-          this.$router.push('/user/comments');
+        case 'myCoupon':
+          this.$router.push('/user/coupon');
           break;
-        case 'logout':/*这里退出应该需要清除store里的数据，不知道有没有清理掉*/
-          this.$store.dispatch('logout');
-          this.$message.success('已退出登录');
-          this.$router.push('/login');
+        case 'comment':  // 如果命令是 'comment'
+          this.$router.push('/user/comments');  // 跳转到用户评论页面
+          break;
+        case 'logout':  // 如果命令是 'logout'
+          /* 这里退出应该需要清除 store 里的数据，不知道有没有清理掉 */
+          this.$store.dispatch('logout');  // 调用 vuex 的 logout 动作，清除用户的认证信息或相关数据
+          this.$message.success('已退出登录');  // 弹出提示消息，提示用户已退出登录
+          this.$router.push('/login');  // 跳转到登录页面
           break;
         case 'product':
           this.$router.push('/star/productStar');
@@ -120,6 +129,7 @@ export default {
   }
 }
 </script>
+
 
 <style lang="scss">
 #app {

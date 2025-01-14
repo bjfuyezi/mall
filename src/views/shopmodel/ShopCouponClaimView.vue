@@ -1,13 +1,12 @@
 <template>
-  <div>
-    <h1>Promotion View</h1>
-    <!-- 其他内容 -->
-  </div>
+<h2>店铺优惠券</h2>
 </template>
 
 <script setup>
 
 </script>
+
+
 
 <style scoped lang="scss">
 

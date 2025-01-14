@@ -12,6 +12,11 @@
         <p v-else>{{`http://localhost:8081${this.currentAd.url}`}}</p>
 
           <el-form :model="currentAd" label-width="120px" class="ad-form" ref="editForm">
+          <!-- 图片上传 -->
+          <div class="form-group">
+            <label for="picture">图片</label>
+            <input id="picture" ref="pictureInput" type="file" @change="handleFileChange" />
+          </div>
           <!-- 开始时间 -->
           <el-form-item label="创建时间">
             <span>{{ currentAd.created_time ? new Date(currentAd.created_time).toISOString().split('T')[0] : '暂无' }}</span>
@@ -109,7 +114,8 @@ export default {
   data() {
     return {
       dialogVisible: this.visible,  // 控制弹窗显示
-      currentAd: { ...this.adData } // 初始化当前广告数据
+      currentAd: { ...this.adData }, // 初始化当前广告数据
+      pic_id: 0
     };
   },
   watch: {
@@ -142,14 +148,32 @@ export default {
       };
       return statusMap[status] || '未知';
     },
-
+    async handleFileChange(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.currentAd.picture = file; // 只保存第一个文件
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axios.post('http://localhost:8081/pic/upload',formData);
+        if(response.status == 200 ){
+          this.pic_id = response.data
+        }else{
+          alert('图片解析出错');
+        }
+      } else {
+        this.currentAd.picture = null;
+      }
+    },
     // 提交数据
     async handleSubmit() {
+      let x = confirm('修改会打回为审核状态，是否要修改');
+      if(x == true){
        try {
         console.log(this.currentAd);
         const response = await axios.post('http://localhost:8081/advertise/updateinfo',{
             advertisement_id: this.currentAd.advertisement_id,
-            name: this.currentAd.name
+            name: this.currentAd.name,
+            picture_id: this.pic_id
             });
         console.log(response);
         alert("修改成功");
@@ -158,6 +182,7 @@ export default {
         console.error("修改出错", error);
       }
       this.closeDialog();
+      }
     },
 
     // 关闭弹窗的方法

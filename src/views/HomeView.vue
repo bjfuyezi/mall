@@ -15,10 +15,13 @@
       </aside>
 
       <!-- 轮播广告 -->
-      <div class="banner" v-if="banners.length">
+      <div class="banner" >
         <div class="banner-content">
           <vue-slick-carousel v-bind="settings" @afterChange="logSlideChange">
-            <div v-for="(slide, index) in banners" :key="index" class="slide" >
+            <div v-if="this.banners.length == 0" class="slide">
+              <img src="../assets/banner.png" alt="Default Slide Image" />
+            </div>
+            <div v-else v-for="(slide, index) in banners" :key="index" class="slide" >
               <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
             </div>
           </vue-slick-carousel>
@@ -50,6 +53,7 @@
 <script>
 import axios from 'axios';
 import VueSlickCarousel from 'vue-slick-carousel';
+import defaultImage from '@/assets/banner.png';
 
 export default {
   name: 'HomeView',
@@ -58,10 +62,12 @@ export default {
   },
   data() {
     return {
+      defaultImageUrl: defaultImage,
       banners: [], // 存储轮播图的数据
       products: [], // 存储商品的数据
       showProducts: [], // 展示用的数据
       page: 1, // 当前页码
+      ans:0,//当前轮数
       loadingMore: false, // 是否正在加载更多商品
       showBanner: true,
       bannerOffset: 0, // 新增：用于跟踪广告偏移量
@@ -97,7 +103,7 @@ export default {
       try {
         const response = await axios.get('http://localhost:8081/advertise/banner');
         this.banners = response.data;
-
+        console.log(this.banners.length == 0);
         // 销毁并重新初始化轮播图
         this.$nextTick(() => {
           if (this.$refs.carousel) {
@@ -115,7 +121,76 @@ export default {
     async fetchProducts() {
       try {
         this.loadingMore = true;
+        if(this.ans<4&&this.ans!=0){
+          console.log("加页");
+          let newProducts = this.productsall.slice(this.ans*8,(this.ans+1)*8);
+          this.products.push(...newProducts);
+          console.log("当前页的",newProducts);
+          // 收集所有需要的 id 到一个数组中
+          const pIds = newProducts
+                            .filter(p => p.greedy!== null&&p.greedy !== 0) // 过滤出 greedy 不为零的产品
+                            .map(p => p.product_id);     // 提取这些产品的 picture_id
+          // 将所有的 id 一次性发送给后端
+          for(let p of newProducts)
+            console.log(p.greedy!== null,p.greedy !== 0);
+          if(pIds.length>0){
+              await axios.post('http://localhost:8081/product/flushGreedy', { ids: pIds });
+          }
+          this.selectCategory(this.selectedCategory);//保持当前分类
+          this.ans+=1;
+          this.page+=1;
+        }
+        else{
+          console.log("加新的");
+              const userid = this.$store.getters.userId;
+              const response = await axios.get('http://localhost:8081/product/homeview',{
+                params:{
+                  uid:userid
+                }
+              });
+              if (response.data != null) {
+                this.productsall = response.data;
+                //this.products.push(...response.data);//追加新的内容
+                //console.log(this.products);
+                console.log("新东西",response.data);
+              }
+              for (let p of this.productsall) {
+                //console.log(p.picture_id);
+                const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:p.picture_id});
+                if ( picResponse.data != null ) {
+                  p.picture_id = picResponse.data;
+                }
+              }
+              let pIds =[];
+              if(this.page == 1){
+                this.products = this.productsall.slice(0, 4);
+                // 收集所有需要的 id 到一个数组中
+                pIds = this.products
+                                  .filter(p => p.greedy!== null&&p.greedy !== 0) // 过滤出 greedy 不为零的产品
+                                  .map(p => p.product_id);     // 提取这些产品的 picture_id
+                // 将所有的 id 一次性发送给后端
+                for(let p of this.products)
+                  console.log(p.greedy!== null,p.greedy !== 0);
+              }else{
+                this.products.push(...this.productsall.slice(0,8));
+                // 收集所有需要的 id 到一个数组中
+                pIds = this.productsall.slice(0,8)
+                                  .filter(p => p.greedy!== null&&p.greedy !== 0) // 过滤出 greedy 不为零的产品
+                                  .map(p => p.product_id);     // 提取这些产品的 picture_id
+                // 将所有的 id 一次性发送给后端
+                for(let p of this.productsall.slice(0,8))
+                  console.log(p.greedy!== null,p.greedy !== 0);
+              }
 
+              if(pIds.length>0){
+                const pIdsString = pIds.join(',');
+                await axios.post('http://localhost:8081/product/flushGreedy', { ids: pIdsString });
+              }
+              console.log("当前的",this.products);
+              this.selectCategory(this.selectedCategory);//保持现有类别
+              this.page+=1;
+              this.ans=0;
+        }
         // 动态设置 pageSize
         // const pageSize = this.page === 1 ? 4 : 8;
         // let newProducts = Array.from({ length: pageSize }, (element, index) => ({
@@ -127,27 +202,16 @@ export default {
 
         // 实际请求请取消注释下面的代码，并移除模拟数据部分
         
-        const response = await axios.post('http://localhost:8081/product/selectAll',{});
-        if (response.data != null) {
-          this.products = response.data;
-        }
-        for (let p of this.products) {
-          const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:p.picture_id});
-          if ( picResponse.data != null ) {
-            p.picture_id = picResponse.data;
-          }
-        }
-        this.showProducts = this.products;
         // 将新获取的商品追加到现有商品列表中
         // this.products.push(...newProducts);
 
-        if (this.page === 1) {
-          // 如果是第一页，模拟有广告的情况，减少商品数量
-          this.products = this.products.slice(0, 4);
-          this.showProducts = this.showProducts.slice(0, 4);
-        }
+        // if (this.page === 1) {
+        //   // 如果是第一页，模拟有广告的情况，减少商品数量
+        //   this.products = this.products.slice(0, 4);
+        //   this.showProducts = this.showProducts.slice(0, 4);
+        // }
 
-        this.page++;
+        // this.page++;
         this.loadingMore = false;
       } catch (error) {
         console.error('获取商品失败:', error);
