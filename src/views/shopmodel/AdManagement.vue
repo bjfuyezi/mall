@@ -231,7 +231,7 @@ export default {
     },
     //关闭详情弹窗
     closeDialog() {
-      alert("关闭");
+      //alert("关闭");
       this.editDialogVisible = false;  // 关闭弹窗
       this.currentAd = null;
     },

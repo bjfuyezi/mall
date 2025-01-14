@@ -159,6 +159,11 @@ export default {
         this.error = null;
 
         const formData = new FormData();
+        const userid = this.$store.getters.userId;
+        const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:userid});
+        if ( shopResponse.data != null ) {
+          formData.append('shop_id',shopResponse.data.shop_id);
+        }
         formData.append('name', this.formData.name);
         // 如果是产品广告，附加选中的产品ID
         if (this.formData.type === 'product' && this.formData.selectedProduct) {
