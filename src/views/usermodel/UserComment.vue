@@ -163,9 +163,6 @@
         }
   
         try {
-          // 将图片ID数组转换为逗号分隔的字符串
-          const pictureIdString = this.commentForm.picture_id.join(',');
-          
           const commentData = {
             comment_id: null,
             user_id: this.commentForm.user_id,
@@ -175,10 +172,8 @@
             product_id: this.commentForm.product_id,
             status: this.commentForm.status,
             created_time: null,
-            picture_id: pictureIdString  // 直接发送字符串，而不是JSON字符串
+            picture_id: JSON.stringify(this.commentForm.picture_id) // 将图片ID数组转换为JSON字符串
           };
-
-          console.log('Sending comment data:', commentData); // 调试用
 
           const response = await this.$axios.post('http://localhost:8081/comment/create', commentData);
           
