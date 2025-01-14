@@ -12,7 +12,7 @@
     <div class="form-group">
       <label for="product">选择商品</label>
       <select id="product" v-model="formData.selectedProduct" required>
-        <option v-for="product in products" :key="product.id" :value="product.id">
+        <option v-for="product in products" :key="product.product_id" :value="product.product_id">
           {{ product.name }}
         </option>
       </select>
@@ -52,7 +52,7 @@ export default {
   data() {
     return {
       formData: {
-        ps_id: null,
+        ps_id: 0,
         name: '',
         price: null,
         picture: null, // 这里将保存文件对象
@@ -100,7 +100,7 @@ export default {
           const proResponse = await axios.post('http://localhost:8081/product/getAllByShop_id', {id:shopResponse.data.shop_id});
           if ( proResponse.data != null ) {
             this.products = proResponse.data;
-            console.log(proResponse.data[0]);
+            console.log(proResponse.data);
           }
         }
      
@@ -154,13 +154,12 @@ export default {
         // 发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
         if(response.status==200){
-          alert('申请成功');
-          this.$emit('refresh');
+          //进入支付页面
+          console.log(response.data);
+          this.$emit('refresh',response.data);
         }else {
           alert('申请失败，遇到',response.status,'错误');
         }
-        console.log(response.data);
-        this.$emit('refresh',response.data);
         this.clearForm();
       } catch (err) {
         this.error = err.message || '发生错误，请稍后再试';
