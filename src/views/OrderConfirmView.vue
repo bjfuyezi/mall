@@ -162,23 +162,26 @@
 export default {
   name: 'OrderConfirmView',
   data() {
+    // 打印接收到的参数
+    console.log('路由参数:', this.$route.query);
+    
     return {
       orderProducts: [
         {
-          id: 1,
+          id: this.$route.query.productid || null,
           name: '示例商品',
-          price: 999,
+          price: Number(this.$route.query.price) || 0,
           quantity: 1,
           stock: 10,
-          image: 'https://via.placeholder.com/80'
+          image: this.$route.query.image ? 'http://localhost:8081' + this.$route.query.image : ''
         }
       ],
       remark: '',
-      userid:2,
-      productid:3,
-      addressid:1,
-      status:'待支付',
-      shopid:5,
+      userid: this.$store.getters.userId,
+      productid: this.$route.query.productid || null,
+      addressid: 1,
+      status: '待支付',
+      shopid: this.$route.query.shopid || null,
       selectedAddress: null,
       showAddressDialog: false,
       addressList: [
@@ -242,7 +245,8 @@ export default {
     ('00' + now.getMilliseconds()).slice(-3)    // 毫秒（补零）
   )
   
-  const orderData = {                 // 订单号
+  const orderData = {
+    order_id:this.orderid,                   // 订单号
     user_id:this.userid,
     product_id:this.productid,
     address_id:this.addressid,
@@ -287,12 +291,25 @@ export default {
 }
     }
   },
-  created() {
-    // 获取路由参数中的商品信息
-    const { productId, quantity } = this.$route.query
-    if (productId) {
-      // 这里应该根据productId获取商品信息
-      this.orderProducts[0].quantity = parseInt(quantity) || 1
+  async created() {
+    // 获取商品详细信息
+    if (this.productid) {
+      try {
+       /* const response =*/ await this.$axios.post('http://localhost:8081/product/selectById', {
+          id: this.productid
+        });
+        /*if (response.data) {
+          // 更新商品信息
+          const picResponse = await this.$axios.post('http://localhost:8081/pic/getManyUrl', {id:this.productid});
+          if ( picResponse.data != null ) {
+            this.product.picture_id = picResponse.data;
+            this.orderProducts[0].image='http://localhost:8081'+this.product.picture_id[0];
+          }
+        }*/
+      } catch (error) {
+        console.error('获取商品信息失败:', error);
+        this.$message.error('获取商品信息失败');
+      }
     }
   }
 }

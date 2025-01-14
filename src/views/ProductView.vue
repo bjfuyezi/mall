@@ -108,6 +108,7 @@
           </div>
           <div class="action-buttons">
             <el-button type="primary" @click="addToCart(this.quantity,this.selectedFlavor,this.product.product_id)">加入购物车</el-button>
+            <el-button type="danger" @click="quickBuy()">立即购买</el-button>
             <el-button @click="toggleFavorite">
               <i :class="isFavorite ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
               {{ isFavorite ? '已收藏' : '收藏' }}
@@ -187,8 +188,12 @@ export default {
     }
   },
   methods: {
-    toShop(){
-
+    toShop(shopId) {
+      // 跳转到店铺页面的逻辑
+      this.$router.push({
+        path: '/shop',
+        query: { id: shopId }
+      });
     },
     // 更新购买数量的最大值
     updateMaxQuantity() {
@@ -220,6 +225,30 @@ export default {
         showCancelButton: false,
         confirmButtonText: '关闭'
       })
+    },
+    quickBuy() {
+      if (!this.selectedFlavor) {
+        this.$message.warning('请先选择商品规格');
+        return;
+      }
+      
+      // 打印检查传递的参数
+      console.log('传递的参数:', {
+        productid: this.product.product_id,
+        price: this.product.price,
+        shopid: this.product.shop_id,
+        image: this.selectedImage
+      });
+
+      this.$router.push({
+        name: 'order-confirm',
+        query: {
+          productid: this.product.product_id,
+          price: this.product.price,
+          shopid: this.product.shop_id,
+          image: this.selectedImage
+        }
+      });
     }
   }
 }
@@ -494,5 +523,15 @@ export default {
 
 .el-input-number {
   width: 200px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+
+  .el-button {
+    flex: 1;
+  }
 }
 </style> 
