@@ -206,9 +206,18 @@ export default {
 
       axios.post('http://localhost:8081/shop/updateShop', formData)
             .then(response => {
-              if ( response.status === 200 ){
-                alert('申请成功');
-                window.location.reload();
+              if ( response.data!= null ){
+                console.log(response.data);
+                if ( response.data === 409 ){
+                  alert('存在重名！');
+                  window.location.reload();
+                } else if ( response.data === 404 ){
+                  alert('找不到店铺');
+                  window.location.reload();
+                } else {
+                  alert('申请成功');
+                  window.location.reload();
+                }
               }
             })
             .catch(error => {

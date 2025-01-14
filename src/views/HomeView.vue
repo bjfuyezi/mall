@@ -245,9 +245,10 @@ export default {
         params: { id: product.product_id },
         state: { product }
       });
-    },logSlideChange(index) {
-    console.log('当前幻灯片索引:', index);
-    console.log('当前幻灯片数据:', this.banners[index]);
+    },
+    logSlideChange(index) {
+      console.log('当前幻灯片索引:', index);
+      console.log('当前幻灯片数据:', this.banners[index]);
   },
   },
   mounted() {
