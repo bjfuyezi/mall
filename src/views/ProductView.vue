@@ -107,7 +107,7 @@
             ></el-input-number>
           </div>
           <div class="action-buttons">
-            <el-button type="primary" @click="addToCart(this.quantity,this.selectedFlavor,this.product.product_id)">加入购物车</el-button>
+            <el-button type="primary" @click="addToCart()">加入购物车</el-button><!--this.quantity,this.selectedFlavor,this.product.product_id,this.product.shop_id-->
             <el-button type="danger" @click="quickBuy()">立即购买</el-button>
             <el-button @click="toggleFavorite">
               <i :class="isFavorite ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
@@ -205,9 +205,30 @@ export default {
     selectImage(image) {
       this.selectedImage = image;  // 点击缩略图时更新大图
     },
-    addToCart(quantity,selectedFlavor,product_id) {
-      console.log(quantity, selectedFlavor, product_id);
-      this.$message.success('已添加到购物车')
+    addToCart() {//quantity,selectedFlavor,product_id,shop_id
+      console.log("addToCart",this.quantity, this.selectedFlavor, this.product.product_id,this.product.shop_id);
+      const userId = this.$store.getters.userId; // 获取用户ID
+      axios.post('http://localhost:8081/cart/add', {
+        user_id: userId,
+        product_id: this.product.product_id,
+        quantity: this.quantity,
+        shop_id: this.product.shop_id,
+        flavor: this.selectedFlavor
+      })
+          .then(response => {
+            if (response.data === "商品加入购物车成功") {
+              this.$message.success('已添加到购物车');
+            }
+            else if (response.data === "该商品规格已经加入用户购物车") {
+              this.$message.error('该商品规格已经加入购物车');
+            }
+            else {
+              this.$message.error('加入购物车失败');
+            }
+          })
+          .catch(error => {
+            this.$message.error('添加到购物车失败：' + error.message);
+          });
     },
     toggleFavorite() {
       this.isFavorite = !this.isFavorite
