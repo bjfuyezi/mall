@@ -130,7 +130,6 @@ export default {
         const response = await axios.post('http://localhost:8081/product/selectAll',{});
         if (response.data != null) {
           this.products = response.data;
-          console.log(this.products);
         }
         for (let p of this.products) {
           const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:p.picture_id});
