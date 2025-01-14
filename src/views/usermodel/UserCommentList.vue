@@ -9,6 +9,7 @@
           <div v-for="comment in comments" :key="comment.comment_id" class="comment-item">
             <div class="comment-header">
               <div class="comment-info">
+                <span class="order-id">订单号：{{ comment.order_id }}</span>
                 <span class="comment-date">{{ new Date(comment.created_time).toLocaleString() }}</span>
               </div>
               <div class="comment-rating">
@@ -137,8 +138,19 @@ export default {
       justify-content: space-between;
       align-items: center;
 
-      .comment-date {
-        color: #999;
+      .comment-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        .order-id {
+          color: #666;
+          font-weight: bold;
+        }
+
+        .comment-date {
+          color: #999;
+        }
       }
     }
 
