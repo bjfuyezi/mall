@@ -146,56 +146,7 @@
         @close-dialog="closeDialog"
         @refresh="fetchAds()"
       />
-
-          <!-- 选择支付方式对话框 -->
-    <el-dialog
-      title="选择支付方式"
-      :visible.sync="showPayMethodDialog"
-      width="300px"
-      center
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-    >
-      <div class="pay-method-content">
-        <el-button class="pay-method-btn" @click="PayMethod('wechat')">
-          <i class="el-icon-goods"></i>
-          微信支付
-        </el-button>
-        <el-button class="pay-method-btn" @click="PayMethod('alipay')">
-          <i class="el-icon-goods"></i>
-          支付宝支付
-        </el-button>
-      </div>
-    </el-dialog>
-
- <!-- 添加支付二维码对话框 -->
-    <el-dialog
-      :title="payTypeText"
-      :visible.sync="showPayDialog"
-      width="300px"
-      center
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-    >
-      <div class="pay-dialog-content">
-        <p class="pay-type-text">{{ payTypeText }}扫码支付</p>
-        <div class="qr-code" ref="qrCode"></div>
-        <div class="pay-amount">
-          支付金额：<span class="price">¥{{ currentPayAmount }}</span>
-        </div>
-        <div class="pay-tips">
-          <p>请使用{{ payTypeText }}扫描二维码完成支付</p>
-          <p class="small">支付完成前请不要关闭窗口</p>
-        </div>
-      </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="cancelPay">取消支付</el-button>
-        <el-button type="primary" @click="confirmPay">确认已支付</el-button>
-      </div>
-    </el-dialog>
-    
+     
     </div>
 
 </template>
@@ -205,7 +156,6 @@ import axios from 'axios';
 import EditAdDialog from '@/components/AdDetailsModal.vue';
 import AddAd from '@/components/AddAd.vue';
 import AddBanner from '@/components/AddBanner.vue';
-import QRCode from 'qrcodejs2';
 
 export default {
   components: {
@@ -385,66 +335,45 @@ export default {
       this.currentPage = newPage; // 更新当前页
       this.advertises = this.advertiseall.slice((this.currentPage-1)*this.pageSize,this.currentPage*this.pageSize);
     },
-  payOrder(data){
+  async payOrder(data){
     console.log(data);
+    //发送支付请求
     this.currentPay = data;
-    this.currentPayAmount = data.price;
-    this.showPayMethodDialog = true;
-  },
-    async PayMethod(method) {
-    console.log(method);
-      this.payMethod = method;
-      this.payTypeText = method === 'wechat' ? '微信' : '支付宝';
-      this.showPayMethodDialog = false;
-      try {
-        /*// 调用后端接口获取支付链接
-        const response = await this.$axios.post('/order/pay', {
-          orderId: this.currentPayOrder.order_id,
-          amount: this.currentPayAmount,
-          payMethod: method
-        });
-        
-        // 显示支付二维码
-        this.showPayDialog = true;
-        this.$nextTick(() => {
-          this.generateQRCode(response.data.payUrl || 'https://example.com/pay');
-        });
-        
-        // 开始轮询支付状态
-        this.startCheckPayStatus(this.currentPayOrder.order_id);*/
-        this.showPayDialog = true;
-        const testPayUrl = method === 'wechat' 
-          ? `weixin://wxpay/bizpayurl?pr=order_${this.currentPayOrder.order_id}_${this.currentPayAmount}` 
-          : `https://qr.alipay.com/pay?order=${this.currentPayOrder.order_id}&amount=${this.currentPayAmount}`;
+    const res = await axios.get('http://localhost:8081/alipay/pay',{
+              params:{
+                  id:data.advertisement_id,
+                  price:data.price,
+                  flag:false
+              }
+          });
+          console.log(res);
+          if(res.status == 200){
+            console.log(res.status);
+            let htmlContent = res.data;
+            let blob = new Blob([htmlContent], { type: 'text/html' });
+            let url = URL.createObjectURL(blob);
+            let newWindow =window.open(url, '_blank');
 
-        // 在对话框显示后生成二维码，并设置不同的颜色
-        this.$nextTick(() => {
-          this.generateQRCode(testPayUrl, method);
-        });
-        
-      } catch (error) {
-        this.$message.error('创建支付订单失败，请重试');
-        console.error('创建支付订单失败:', error);
-      }
-    },
-    generateQRCode(url, payMethod) {
-      // 清除已存在的二维码
-      if (this.qrCodeInstance) {
-        this.qrCodeInstance.clear();
-      }
-      const qrContainer = this.$refs.qrCode;
-      if (qrContainer) {
-        qrContainer.innerHTML = '';
-        this.qrCodeInstance = new QRCode(qrContainer, {
-          text: url,
-          width: 200,
-          height: 200,
-          colorDark: payMethod === 'wechat' ? '#2C8722' : '#00A0E9',  // 微信绿色 vs 支付宝蓝色
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H
-        });
-      }
-    },
+            let ans =0 ;
+            while(newWindow && !newWindow.closed){
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 每秒检查一次
+              ans+=1;
+              if(ans>180){//3min自动关闭
+                newWindow.close();
+                break;
+              }
+            }
+            console.log('新窗口已关闭');
+            //检查当前订单状态判断是否删除/
+            const id = data.advertisement_id;
+            const response = await axios.post(`http://localhost:8081/advertise/checkdel?id=${id}`);
+              if(response.status == 200){
+                alert('申请成功');
+              }else alert('申请失败');
+            //清理资源
+            URL.revokeObjectURL(url);
+          }
+  },
     cancelPay() {
       this.$confirm('确定要取消支付吗？', '提示', {
         confirmButtonText: '确定',
@@ -461,7 +390,8 @@ export default {
         // 调用后端验证支付状态
         const response = await this.$axios.post('http://localhost:8081/order/pay', {
           order_id: this.currentPayOrder.order_id,
-          payment_method:this.payTypeText
+          payment_method:this.payTypeText,
+          flag : false
         });
         /*
         if (response.data.paid) {

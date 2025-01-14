@@ -28,7 +28,7 @@
   
             <div class="order-products">
               <div class="product-item">
-                <img :src="order.product_image" :alt="order.product_name">
+                <img :src="`http://localhost:8081${order.url}`" :alt="order.product_name">
                 <div class="product-info">
                   <h4>{{ order.product_name }}</h4>
                   <div class="product-price">
@@ -66,9 +66,10 @@
                   type="primary"
                   plain
                   size="small"
+                  :disabled="order.isCommented"
                   @click="reviewOrder(order)"
                 >
-                  评价
+                  {{ order.isCommented ? '已评价' : '评价' }}
                 </el-button>
                 <el-button 
                   type="text"
@@ -478,6 +479,33 @@ export default {
         'completed': '已完成'
       }
       return statusMap[status] || status
+    },
+    async fetchComments() {
+      try {
+        const userid = this.$store.getters.userId;
+        const response = await this.$axios.post('http://localhost:8081/order/getOrdervo', {
+          user_id: userid
+        });
+        
+        if (response.data) {
+          // 获取所有评价记录
+          const commentResponse = await this.$axios.post('http://localhost:8081/comment/getCommentVo', {
+            user_id: userid
+          });
+          
+          const commentedOrderIds = commentResponse.data ? 
+            commentResponse.data.map(comment => comment.order_id) : [];
+          
+          // 为每个订单添加是否已评价的标记
+          this.orders = response.data.map(order => ({
+            ...order,
+            isCommented: commentedOrderIds.includes(order.order_id)
+          }));
+        }
+      } catch (error) {
+        this.$message.error('获取订单列表失败');
+        console.error('获取订单列表失败:', error);
+      }
     }
   },
   beforeDestroy() {

@@ -9,6 +9,7 @@
           <div v-for="comment in comments" :key="comment.comment_id" class="comment-item">
             <div class="comment-header">
               <div class="comment-info">
+                <span class="order-id">订单号：{{ comment.order_id }}</span>
                 <span class="comment-date">{{ new Date(comment.created_time).toLocaleString() }}</span>
               </div>
               <div class="comment-rating">
@@ -22,7 +23,7 @@
 
             <div class="comment-content">
               <div class="product-info">
-                <img :src="comment.product_image" :alt="comment.product_name">
+                <img :src="`http://localhost:8081${comment.product_firimg}`" :alt="comment.product_name">
                 <div class="product-detail">
                   <h4>{{ comment.product_name }}</h4>
                   <p class="price">¥{{ comment.product_price }}</p>
@@ -34,12 +35,12 @@
               </div>
 
               <!-- 评价图片 -->
-              <div class="comment-images" v-if="comment.picture_urls && comment.picture_urls.length">
+              <div class="comment-images" v-if="comment.imgList && comment.imgList.length">
                 <img 
-                  v-for="(url, index) in comment.picture_urls" 
+                  v-for="(url, index) in comment.imgList" 
                   :key="index" 
-                  :src="url" 
-                  @click="previewImage(url)"
+                  :src="`http://localhost:8081${url}`"
+                  @click="previewImage(`http://localhost:8081${url}`)"
                 >
               </div>
             </div>
@@ -70,12 +71,19 @@ export default {
   methods: {
     async fetchComments() {
       try {
-        const response = await this.$axios.post('http://localhost:8081/comment/getCommentByUserId', {
-          user_id: this.$store.getters.userId
+        const userid = this.$store.getters.userId;
+        const response = await this.$axios.post('http://localhost:8081/comment/getCommentVo', {
+          user_id: userid
         });
         
         if (response.data) {
           this.comments = response.data;
+          // 处理日期格式
+          this.comments.forEach(comment => {
+            if (comment.created_time) {
+              comment.created_time = new Date(comment.created_time).toLocaleString();
+            }
+          });
         }
       } catch (error) {
         this.$message.error('获取评价列表失败');
@@ -84,9 +92,9 @@ export default {
     },
     previewImage(url) {
       // 图片预览
-      this.$imagePreview({
-        images: [url],
-        index: 0
+      this.$alert(`<img src="${url}" style="max-width: 100%;">`, '图片预览', {
+        dangerouslyUseHTMLString: true,
+        showConfirmButton: false,
       });
     }
   }
@@ -130,8 +138,19 @@ export default {
       justify-content: space-between;
       align-items: center;
 
-      .comment-date {
-        color: #999;
+      .comment-info {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        .order-id {
+          color: #666;
+          font-weight: bold;
+        }
+
+        .comment-date {
+          color: #999;
+        }
       }
     }
 

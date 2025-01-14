@@ -181,7 +181,6 @@ export default {
         //发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
         if(response.status==200){
-          alert('申请成功');
             console.log(response.data);
             this.$emit('refresh',response.data);
         }else if(response.data==409){
