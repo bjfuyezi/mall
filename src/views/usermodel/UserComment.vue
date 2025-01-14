@@ -11,7 +11,7 @@
             :http-request="handleUpload"
             :show-file-list="false"
             :before-upload="beforeUpload"
-            multiple
+            :multiple="false"
           >
             <div class="upload-box" v-if="imageList.length < 5">
               <i class="el-icon-plus"></i>
@@ -66,16 +66,18 @@
     name: 'UserComment',
     data() {
       return {
-        imageList: [],
+        imageList: [], // 存储图片预览URL
+        pictureIds: [], // 存储后端返回的picture_id
         commentForm: {
-          comment_id: null,        // 由后端生成
-          user_id: null,             // 应该从登录状态获取
+          comment_id: null,
+          user_id: null,
           order_id: null,
           content: '',
-          level: 5,               // 默认5星
+          level: 5,
           product_id: null,
-          status: '待评价',       // 默认状态
-          created_time: null      // 由后端生成
+          status: '待评价',
+          created_time: null,
+          picture_id: [] // 存储图片ID数组
         }
       }
     },
@@ -115,48 +117,75 @@
   
         return true
       },
-      handleUpload(options) {
-        const file = options.file
-        // 将文件转换为 base64 以便预览
-        const reader = new FileReader()
-        reader.readAsDataURL(file)
-        reader.onload = () => {
-          this.imageList.push(reader.result)
+      async handleUpload(options) {
+        try {
+          const file = options.file;
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          // 上传单张图片到后端
+          const response = await this.$axios.post('http://localhost:8081/pic/uploadAndId', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          if (response.data) {
+            // 保存后端返回的图片ID
+            const pictureId = response.data;
+            this.pictureIds.push(pictureId);
+            this.commentForm.picture_id = this.pictureIds;
+            console.log(this.commentForm.picture_id)
+            // 显示图片预览
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+              this.imageList.push(reader.result);
+            };
+
+            this.$message.success('图片上传成功');
+          } else {
+            throw new Error('上传失败');
+          }
+        } catch (error) {
+          this.$message.error('图片上传失败，请重试');
+          console.error('上传图片失败:', error);
         }
       },
       removeImage(index) {
-        this.imageList.splice(index, 1)
+        this.imageList.splice(index, 1);
+        this.pictureIds.splice(index, 1); // 同时删除对应的pictureId
+        this.commentForm.picture_id = this.pictureIds; // 更新commentForm中的picture_id数组
       },
       async submitComment() {
         if (!this.canSubmit) {
-          return
+          return;
         }
   
         try {
-          // 构造符合后端要求的数据格式
           const commentData = {
-            comment_id: null,  // 由后端生成
+            comment_id: null,
             user_id: this.commentForm.user_id,
             order_id: this.commentForm.order_id,
-            content: this.commentForm.content.trim(),  // 去除空格
-            level: Number(this.commentForm.level),     // 确保是数字
+            content: this.commentForm.content.trim(),
+            level: Number(this.commentForm.level),
             product_id: this.commentForm.product_id,
             status: this.commentForm.status,
-            created_time: null  // 由后端生成
-          }
-  
-          // 发送评价数据到后端
-          const response = await this.$axios.post('http://localhost:8081/comment/create', commentData)
+            created_time: null,
+            picture_id: JSON.stringify(this.commentForm.picture_id) // 将图片ID数组转换为JSON字符串
+          };
+
+          const response = await this.$axios.post('http://localhost:8081/comment/create', commentData);
           
           if (response.status === 201) {
-            this.$message.success('评价提交成功！')
-            this.$router.push('/user/orders')
+            this.$message.success('评价提交成功！');
+            this.$router.push('/user/orders');
           } else {
-            throw new Error(response.data.message || '提交失败')
+            throw new Error(response.data.message || '提交失败');
           }
         } catch (error) {
-          this.$message.error(error.message || '评价提交失败，请重试')
-          console.error('提交评价失败:', error)
+          this.$message.error(error.message || '评价提交失败，请重试');
+          console.error('提交评价失败:', error);
         }
       }
     }

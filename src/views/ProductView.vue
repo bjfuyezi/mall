@@ -6,7 +6,25 @@
         <!-- 商品主要信息 -->
         <div class="product-main">
           <div class="product-gallery">
-            <img :src="'http://localhost:8081'+product.picture_id[0]" :alt="product.name">
+            <div class="image-gallery">
+              <!-- 显示大图 -->
+              <div class="main-image">
+                <img :src="'http://localhost:8081' + selectedImage" :alt="product.name" class="large-image" />
+              </div>
+
+              <!-- 显示缩略图列表 -->
+              <div class="thumbnail-list">
+                <div 
+                  v-for="(image, index) in product.picture_id" 
+                  :key="index" 
+                  class="thumbnail"
+                  :class="{'active': image === selectedImage}" 
+                  @click="selectImage(image)"
+                >
+                  <img :src="'http://localhost:8081' + image" :alt="`Image ${index + 1}`" class="thumbnail-img" />
+                </div>
+              </div>
+            </div>
           </div>
           <div class="product-info">
             <h1>{{ product.name }}</h1>
@@ -17,18 +35,13 @@
               </span>
             </div>
             <div class="product-stats">
-              <span>销量 {{ product.salenum }}</span>
-              <span>评价 {{ product.reviews }}</span>
-              <span>收藏 {{ product.favorites }}</span>
+              <span>销量 {{ product.salenum }}</span><br/>
+              <span>评价 {{ product.reviews }}</span><br/>
+              <span>收藏 {{ product.favorites }}</span><br/>
+              <span>地点 {{ product.location }}</span><br/>
+              <span>所属店铺 {{ shop_name }}</span><br/>
             </div>
-            <el-button 
-              type="danger" 
-              class="quick-buy-btn"
-              size="large"
-              @click="quickBuy"
-            >
-              立即购买
-            </el-button>
+            <el-button type="primary" @click="toShop(product.shop_id)">查看店铺其他商品</el-button>
           </div>
         </div>
 
@@ -70,14 +83,32 @@
         <div class="product-action">
           <div class="quantity-selector">
             <span>购买数量：</span>
+
+            <!-- 口味单选按钮 -->
+            <div class="flavor-options">
+              <el-radio-group v-model="selectedFlavor" @change="updateMaxQuantity">
+                <el-radio 
+                  v-for="(flavor, index) in product.quantity" 
+                  :key="index" 
+                  :label="flavor.flavor"
+                  :value="flavor.flavor"
+                >
+                  {{ flavor.flavor }}
+                </el-radio>
+              </el-radio-group>
+            </div>
+
+            <!-- 数量选择 -->
             <el-input-number 
               v-model="quantity" 
               :min="1" 
-              :max="product.stock"
+              :max="maxQuantity"
+              :disabled="!selectedFlavor"
             ></el-input-number>
           </div>
           <div class="action-buttons">
-            <el-button type="primary" @click="addToCart">加入购物车</el-button>
+            <el-button type="primary" @click="addToCart(this.quantity,this.selectedFlavor,this.product.product_id)">加入购物车</el-button>
+            <el-button type="danger" @click="quickBuy()">立即购买</el-button>
             <el-button @click="toggleFavorite">
               <i :class="isFavorite ? 'el-icon-star-on' : 'el-icon-star-off'"></i>
               {{ isFavorite ? '已收藏' : '收藏' }}
@@ -115,9 +146,13 @@ export default {
   name: 'ProductView',
   data() {
     return {
+      shop_name:'',
+      selectedImage:'',
       product_id: '',
       activeTab: 'description',
-      quantity: 1,
+      quantity: 1, // 默认购买数量
+      selectedFlavor: '', // 当前选中的口味
+      maxQuantity: 0, // 当前选中口味的最大购买数量
       isFavorite: false,
       product: {},
       hotProducts: []
@@ -134,9 +169,15 @@ export default {
       if (response.status === 200) {
         // 合并API返回的数据和默认数据
         this.product = response.data;
+        this.product.quantity = JSON.parse(this.product.quantity);
         const picResponse = await axios.post('http://localhost:8081/pic/getManyUrl', {id:this.product.picture_id});
           if ( picResponse.data != null ) {
             this.product.picture_id = picResponse.data;
+            this.selectedImage=this.product.picture_id[0];
+          }
+        const shopResponse = await axios.post('http://localhost:8081/shop/getById', {id:this.product.shop_id});
+        if ( shopResponse.data != null ) {
+            this.shop_name = shopResponse.data.shop_name;
           }
       } else {
         throw new Error(response.data.message || '获取商品信息失败');
@@ -147,21 +188,30 @@ export default {
     }
   },
   methods: {
-    addToCart() {
+    toShop(shopId) {
+      // 跳转到店铺页面的逻辑
+      this.$router.push({
+        path: '/shop',
+        query: { id: shopId }
+      });
+    },
+    // 更新购买数量的最大值
+    updateMaxQuantity() {
+      const selectedFlavorObj = this.product.quantity.find(flavor => flavor.flavor === this.selectedFlavor);
+      this.maxQuantity = selectedFlavorObj ? selectedFlavorObj.quantity : 0;
+      this.maxQuantity = Number(this.maxQuantity);
+      this.quantity = 1;
+    },
+    selectImage(image) {
+      this.selectedImage = image;  // 点击缩略图时更新大图
+    },
+    addToCart(quantity,selectedFlavor,product_id) {
+      console.log(quantity, selectedFlavor, product_id);
       this.$message.success('已添加到购物车')
     },
     toggleFavorite() {
       this.isFavorite = !this.isFavorite
       this.$message.success(this.isFavorite ? '收藏成功' : '已取消收藏')
-    },
-    quickBuy() {
-      this.$router.push({
-        name: 'order-confirm',
-        query: {
-          productId: this.product.id,
-          quantity: this.quantity
-        }
-      });
     },
     previewImage(_url) {
       this.$msgbox({
@@ -175,6 +225,30 @@ export default {
         showCancelButton: false,
         confirmButtonText: '关闭'
       })
+    },
+    quickBuy() {
+      if (!this.selectedFlavor) {
+        this.$message.warning('请先选择商品规格');
+        return;
+      }
+      
+      // 打印检查传递的参数
+      console.log('传递的参数:', {
+        productid: this.product.product_id,
+        price: this.product.price,
+        shopid: this.product.shop_id,
+        image: this.selectedImage
+      });
+
+      this.$router.push({
+        name: 'order-confirm',
+        query: {
+          productid: this.product.product_id,
+          price: this.product.price,
+          shopid: this.product.shop_id,
+          image: this.selectedImage
+        }
+      });
     }
   }
 }
@@ -371,6 +445,93 @@ export default {
         color: #ff6700;
       }
     }
+  }
+}
+
+.image-gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.large-image {
+  max-width: 600px;
+  max-height: 400px;
+}
+
+.thumbnail-list {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.thumbnail {
+  cursor: pointer;
+  transition: transform 0.3s;
+  width: 80px;   /* 统一宽度 */
+  height: 80px;  /* 统一高度 */
+  border-radius: 4px; /* 可选的圆角效果 */
+  overflow: hidden;
+  border: 2px solid transparent; /* 默认无边框 */
+}
+
+.thumbnail:hover {
+  transform: scale(1.1); /* 鼠标悬停时缩略图稍微放大 */
+}
+
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 图片填充容器，保持比例 */
+}
+
+.thumbnail.active {
+  border: 2px solid #409EFF; /* 给选中的缩略图加边框 */
+}
+
+.quantity-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flavor-options {
+  display: flex;
+  gap: 15px;
+}
+
+.el-radio {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f7f7f7;
+  cursor: pointer;
+}
+
+.el-radio.is-checked {
+  background-color: #409EFF;
+  color: #fff;
+}
+
+.el-input-number {
+  width: 200px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+
+  .el-button {
+    flex: 1;
   }
 }
 </style> 

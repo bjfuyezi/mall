@@ -28,7 +28,7 @@
   
             <div class="order-products">
               <div class="product-item">
-                <img :src="order.product_image" :alt="order.product_name">
+                <img :src="`http://localhost:8081${order.url}`" :alt="order.product_name">
                 <div class="product-info">
                   <h4>{{ order.product_name }}</h4>
                   <div class="product-price">
@@ -66,9 +66,10 @@
                   type="primary"
                   plain
                   size="small"
+                  :disabled="order.isCommented"
                   @click="reviewOrder(order)"
                 >
-                  评价
+                  {{ order.isCommented ? '已评价' : '评价' }}
                 </el-button>
                 <el-button 
                   type="text"
@@ -248,9 +249,34 @@ export default {
       });
     },
     async payOrder(order) {
+    
       this.currentPayOrder = order;
-      this.currentPayAmount = order.totalAmount;
-      this.showPayMethodDialog = true;
+      const res = await axios.get('http://localhost:8081/alipay/pay',{
+              params:{
+                  id:order.order_id,
+                  price:order.totalAmount,
+                  flag:true
+              }
+          });
+          if(res.status == 200){
+            console.log(res.status);
+            let htmlContent = res.data;
+            let blob = new Blob([htmlContent], { type: 'text/html' });
+            let url = URL.createObjectURL(blob);
+            let newWindow =window.open(url, '_blank');
+
+            let ans =0 ;
+            while(newWindow && !newWindow.closed){
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 每秒检查一次
+              ans+=1;
+              if(ans>180){//3min自动关闭
+                newWindow.close();
+                break;
+              }
+            }
+            console.log('新窗口已关闭');
+          }
+
     },
     async selectPayMethod(method) {
       this.payMethod = method;
@@ -348,7 +374,6 @@ export default {
           if (ordersResponse.data) {
             this.orders = ordersResponse.data;
           }
-          
           this.stopCheckPayStatus();
         } else {
           this.$message.warning('未检测到支付，请确认是否已完成支付');
@@ -478,6 +503,33 @@ export default {
         'completed': '已完成'
       }
       return statusMap[status] || status
+    },
+    async fetchComments() {
+      try {
+        const userid = this.$store.getters.userId;
+        const response = await this.$axios.post('http://localhost:8081/order/getOrdervo', {
+          user_id: userid
+        });
+        
+        if (response.data) {
+          // 获取所有评价记录
+          const commentResponse = await this.$axios.post('http://localhost:8081/comment/getCommentVo', {
+            user_id: userid
+          });
+          
+          const commentedOrderIds = commentResponse.data ? 
+            commentResponse.data.map(comment => comment.order_id) : [];
+          
+          // 为每个订单添加是否已评价的标记
+          this.orders = response.data.map(order => ({
+            ...order,
+            isCommented: commentedOrderIds.includes(order.order_id)
+          }));
+        }
+      } catch (error) {
+        this.$message.error('获取订单列表失败');
+        console.error('获取订单列表失败:', error);
+      }
     }
   },
   beforeDestroy() {
