@@ -190,6 +190,8 @@ export default {
             this.$emit('refresh',response.data);
         }else if(response.data==409){
           alert('当前时间段广告申请已达上限');
+        }else if(response.status==400){
+          alert('已有推广正在进行');
         }
       } catch (err) {
         this.error = err.message || '发生错误，请稍后再试';
