@@ -127,11 +127,10 @@ export default {
           console.log('Updated addresses:', this.addresses);
         } else {
           console.error('Invalid address data received:', data);
-          this.$message.error('获取地址列表失败');
+          //this.$message.error('获取地址列表失败');
         }
       } catch (error) {
         console.error('Error loading addresses:', error);
-        this.$message.error('获取地址列表失败');
       }
     },
     showAddDialog() {
