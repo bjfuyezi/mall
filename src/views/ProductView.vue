@@ -229,8 +229,13 @@ export default {
         quantity: this.quantity,
         shop_id: this.product.shop_id,
         flavor: this.selectedFlavor
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
           .then(response => {
+            console.log(response);
             if (response.data === "商品加入购物车成功") {
               this.$message.success('已添加到购物车');
             }
@@ -242,7 +247,7 @@ export default {
             }
           })
           .catch(error => {
-            this.$message.error('添加到购物车失败：' + error.message);
+            this.$message.warning('该商品规格已经加入用户购物车' + error.message);
           });
     },
     async toggleFavorite() {
