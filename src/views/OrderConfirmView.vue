@@ -67,8 +67,8 @@
           <div v-if="selectedAddress" class="address-info">
             <div class="address-detail">
               <p>
-                <span class="label">收货人：</span>
-                {{ selectedAddress.name }}
+                <span class="label">收货地址id：</span>
+                {{ selectedAddress.address_id }}
               </p>
               <p>
                 <span class="label">联系电话：</span>
@@ -76,7 +76,7 @@
               </p>
               <p>
                 <span class="label">收货地址：</span>
-                {{ selectedAddress.address }}
+                {{ selectedAddress.address_content }}
               </p>
             </div>
             <el-button type="text" @click="showAddressDialog = true">
@@ -132,14 +132,14 @@
       <div class="address-list">
         <div 
           v-for="address in addressList" 
-          :key="address.id"
+          :key="address.address_id"
           class="address-item"
-          :class="{ active: selectedAddress && selectedAddress.id === address.id }"
+          :class="{ active: selectedAddress && selectedAddress.id === address.address_id }"
           @click="selectAddress(address)"
         >
           <div class="address-content">
-            <p class="name">{{ address.name }} {{ address.phone }}</p>
-            <p class="address">{{ address.address }}</p>
+            <p class="name">{{ address.address_id }} {{ address.phone }}</p>
+            <p class="address">{{ address.address_content }}</p>
           </div>
           <div class="address-actions">
             <el-button type="text" @click.stop="editAddress(address)">
@@ -178,8 +178,8 @@ export default {
       ],
       remark: '',
       userid: this.$store.getters.userId,
+      username:this.$store.getters.username,
       productid: this.$route.query.productid || null,
-      addressid: 1,
       status: '待支付',
       shopid: this.$route.query.shopid || null,
       selectedAddress: null,
@@ -192,8 +192,8 @@ export default {
           address: '北京市朝阳区xxx街道xxx号'
         }
       ],
-      discount: 0,
-      promotion: 0
+      discount: 7,
+      promotion: 5
     }
   },
   computed: {
@@ -207,6 +207,24 @@ export default {
     },
   },
   methods: {
+    async loadAddresses() {
+      try {
+        console.log('Loading addresses for user_id:', this.userId);
+        const response = await fetch(`http://localhost:8081/addresses/user/${this.userid}`);
+        const data = await response.json();
+        console.log('Received addresses data:', data);
+
+        if (data.status === 'success' && Array.isArray(data.data)) {
+          this.addressList = data.data;
+          console.log('Updated addresses:', this.addresses);
+        } else {
+          console.error('Invalid address data received:', data);
+          //this.$message.error('获取地址列表失败');
+        }
+      } catch (error) {
+        console.error('Error loading addresses:', error);
+      }
+    },
     calculateTotal() {
       // 重新计算总价
     },
@@ -249,11 +267,11 @@ export default {
     order_id:this.orderid,                   // 订单号
     user_id:this.userid,
     product_id:this.productid,
-    address_id:this.addressid,
     status:this.status,
     quantity:this.orderProducts[0].quantity,
     shop_id:this.shopid,
     price: this.finalPrice,
+    address_id:this.selectedAddress.address_id
     /*products: this.orderProducts.map(item => ({
       productId: item.id,
       quantity: item.quantity,
@@ -292,25 +310,9 @@ export default {
     }
   },
   async created() {
+    this.loadAddresses();
     // 获取商品详细信息
-    if (this.productid) {
-      try {
-       /* const response =*/ await this.$axios.post('http://localhost:8081/product/selectById', {
-          id: this.productid
-        });
-        /*if (response.data) {
-          // 更新商品信息
-          const picResponse = await this.$axios.post('http://localhost:8081/pic/getManyUrl', {id:this.productid});
-          if ( picResponse.data != null ) {
-            this.product.picture_id = picResponse.data;
-            this.orderProducts[0].image='http://localhost:8081'+this.product.picture_id[0];
-          }
-        }*/
-      } catch (error) {
-        console.error('获取商品信息失败:', error);
-        this.$message.error('获取商品信息失败');
-      }
-    }
+    
   }
 }
 </script>
