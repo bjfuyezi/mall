@@ -3,7 +3,7 @@
     <div class="user-coupons-page">
       <div class="coupons-container">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h2>本商家发布的优惠券</h2>
+          <h2>平台发布的优惠券</h2>
           <el-button
               type="primary"
               icon="el-icon-plus"
@@ -113,7 +113,6 @@
                   <el-button @click="confirmDeleteCoupon(scope.row, scope.$index)" type="danger" size="small" >删除</el-button>
                   <div v-if="scope.row.coupon_status === 'Pending'">
                     <el-button @click="editCoupon(scope.row, scope.$index)" type="primary" size="small" >更新</el-button>
-                    <el-button @click="updateCouponScope(scope.row, scope.$index)" type="success" size="small" >更新适用范围</el-button>
                   </div>
                   <div v-else-if="scope.row.coupon_status === 'Active'">
                     <el-button @click="editCoupon2(scope.row, scope.$index)" type="primary" size="small" >更新</el-button>
@@ -286,25 +285,6 @@
           </span>
         </el-dialog>
 
-        <!-- 更新适用范围对话框 -->
-        <el-dialog :visible.sync="updateScopeDialogVisible" title="更新优惠券适用范围" width="50%">
-          <p>修改序号为 {{ selectIndex + 1 }} 的优惠券的适用范围</p>
-          <el-form ref="updateScopeForm" :model="updateScopeForm" label-width="120px">
-            <el-form-item label="选择商品">
-              <el-checkbox-group v-model="updateScopeForm.selectedProductIds">
-                <el-checkbox
-                    v-for="product in products"
-                    :key="product.product_id"
-                    :label="product.product_id"
-                >{{ product.name }}</el-checkbox>
-              </el-checkbox-group>
-            </el-form-item>
-          </el-form>
-          <span slot="footer" class="dialog-footer">
-            <el-button @click="updateScopeDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="submitUpdateScope">确 定</el-button>
-          </span>
-        </el-dialog>
       </div>
     </div>
   </div>
@@ -323,12 +303,10 @@ export default {
     return {
       activeTab: 'all',//默认为all
       userId : null,
-      shop_id:null,
-      shopCoupons:[],
+      platformCoupons:[],
       showCoupons:[],//展示的优惠券
       selectIndex:0,
       selectRow:[],
-      products:[],//店铺全部商品
       showAddCouponDialog: false,
       loading :false,
       platformCouponDialogVisible: false, // 平台券弹窗是否显示
@@ -338,13 +316,6 @@ export default {
       confirmDeleteDialogVisible:false,
       editPendingCouponDialogVisible: false,
       editActiveCouponDialogVisible: false,
-      updateScopeDialogVisible: false,
-      updateScopeForm: {
-        selectedProductIds: []
-      },
-      beforeScopeProductIds: [], // 存储商店的所有商品
-      beforeScopeProductNames:[],
-      couponDetails:[],
       editCouponForm: {
         coupon_id: null,
         start_time: '',
@@ -368,13 +339,13 @@ export default {
     async refreshCoupons() {
       this.loading = true;
       try {
-        const response = await axios.get(`http://localhost:8081/coupon/shop/${this.shop_id}`);
+        const response = await axios.get('http://localhost:8081/coupon/platform');
         if (response.data != null) {
-          this.shopCoupons = response.data;
+          this.platformCoupons = response.data;
           if(this.activeTab==='all'){
-            this.showCoupons = this.shopCoupons; // 更新显示的优惠券列表
+            this.showCoupons = this.platformCoupons; // 更新显示的优惠券列表
           }else {
-            this.showCoupons = this.shopCoupons
+            this.showCoupons = this.platformCoupons
                 .filter(item => item.coupon_status===this.activeTab);
           }
         }
@@ -401,7 +372,7 @@ export default {
         if (response.status === 200) {
           this.$message.success('优惠券删除成功');
           await this.refreshCoupons(); // 重新加载优惠券列表
-          this.showCoupons = this.activeTab === 'all' ? this.shopCoupons : this.shopCoupons.filter(item => item.coupon_status === this.activeTab);
+          this.showCoupons = this.activeTab === 'all' ? this.platformCoupons : this.platformCoupons.filter(item => item.coupon_status === this.activeTab);
         } else {
           this.$message.error('优惠券删除失败');
         }
@@ -517,101 +488,32 @@ export default {
             this.$message.error('优惠券恢复领取失败: ' + error.response.data);
           });
     },
-    updateCouponScope(row, index) {
-      this.selectRow = row;
-      this.selectIndex = index;
-      this.updateScopeDialogVisible = true;
-      this.fetchScopeDetails();
-    },
-    fetchScopeDetails() {
-      const couponId = this.selectRow.coupon_id;
-      axios.post(`http://localhost:8081/coupon/selectById`,{id:couponId})
-          .then(response => {
-            if (response.status === 200) {
-              this.couponDetails = response.data;
-              console.log("获取的优惠券详情:", this.couponDetails);
-              this.beforeScopeProductIds = this.couponDetails.scope || [];
-              // this.beforeScopeProductNames = this.couponDetails.name || [];
-            } else {
-              this.$message.error('获取优惠券详情失败');
-            }
-          })
-          .catch(error => {
-            this.$message.error('获取的优惠券详情: ' + error.response.data);
-          });
-    },
-    submitUpdateScope() {
-      const couponId = this.selectRow.coupon_id;
-      const productIds = this.updateScopeForm.selectedProductIds;
-      console.log("更新范围提交，新的范围数组：",productIds);
-      axios.post('http://localhost:8081/coupon/updateShopCouponScope', {
-        coupon_id: couponId,
-        productIds: productIds
-      })
-          .then(response => {
-            if (response.status === 200) {
-              this.$message.success('优惠券适用范围更新成功');
-              this.updateScopeDialogVisible = false;
-              this.refreshCoupons() // 重新加载优惠券列表
-            } else {
-              this.$message.error('更新优惠券适用范围失败: ' +response.data);
-            }
-          })
-          .catch(error => {
-            this.$message.error(error.response.data);
-          });
-    },
     // 获取优惠券数据
-    async getAllShopCoupons() {
+    async getAllPlatformCoupons(){
       this.loading = true;
-      this.user_id = this.$store.getters.userId;
+      this.user_id=this.$store.getters.userId;
       console.log("当前用户id为：" + this.user_id);
-      try {
-        const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', { id: this.user_id });
-        if (shopResponse.data != null) {
-          this.shop_id = shopResponse.data.shop_id;
-          console.log("当前店铺id为：" + this.shop_id);
-          try {
-            const response = await axios.post('http://localhost:8081/product/getAllByShop_id', { id: this.shop_id });
-            if (response.data) {
-              this.products = response.data;
-              console.log("商品列表:", this.products);
-            } else {
-              this.$message.warning('该店铺下没有商品');
-            }
-          } catch (error) {
-            this.$message.error('获取商品信息失败: ' + error.response.data);
-          }
-          try {
-            const shopCouponsResponse = await axios.get(`http://localhost:8081/coupon/shop/${this.shop_id}`);
-            if (shopCouponsResponse.data != null) {
-              this.shopCoupons = shopCouponsResponse.data;//全部的店铺券
-              console.log("shopCoupons:", this.shopCoupons);
-              // 不需要扁平化
-              this.showCoupons = this.shopCoupons;
-            } else {
-              this.$message.warning('该店铺下没有优惠券');
-            }
-          } catch (error) {
-            console.error("获取店铺优惠券数据失败", error);
-            this.$message.error('获取店铺优惠券数据失败: ' + error.response.data);
-          }
-        } else {
-          this.$message.warning('未找到店铺信息');
+      try{
+        const platformCouponsResponse = await axios.get('http://localhost:8081/coupon/platform');
+        if(platformCouponsResponse.data!=null){
+          this.platformCoupons = platformCouponsResponse.data;
+          console.log("platform:",this.platformCoupons);
+          //不需要扁平化
+          this.showCoupons = this.platformCoupons;
         }
-      } catch (error) {
-        console.error("获取店铺信息失败", error);
-        this.$message.error('获取店铺信息失败: ' + error.response.data);
-      } finally {
+      }catch (error) {
+        console.error("获取平台优惠券数据失败", error);
+      }finally {
         this.loading = false;
       }
+
     },
     handleTabClick(tab) {
       const status = tab.name;
       if(status==='all'){
-        this.showCoupons = this.shopCoupons;
+        this.showCoupons = this.platformCoupons;
       }else{
-        this.showCoupons = this.shopCoupons
+        this.showCoupons = this.platformCoupons
             .filter(item => item.coupon_status===status);
       }
     },
@@ -645,14 +547,14 @@ export default {
         const response = await axios.get(`http://localhost:8081/userCoupon/scope/details?coupon_id=${couponId}`);
         const scopeDetails = response.data;
         // 这里只有平台券
-        // this.platformScopeData = scopeDetails.platform || [];
-        // console.log("platform:",this.platformScopeData);
-        // this.platformCouponDialogVisible = true; // 显示平台券弹窗
+        this.platformScopeData = scopeDetails.platform || [];
+        console.log("platform:",this.platformScopeData);
+        this.platformCouponDialogVisible = true; // 显示平台券弹窗
 
         // 这里只有店铺券
-        this.shopScopeData = scopeDetails.shop || [];
-        console.log("shop:",this.shopScopeData);
-        this.shopCouponDialogVisible = true; // 显示店铺券弹窗
+        // this.shopScopeData = scopeDetails.shop || [];
+        // console.log("shop:",this.shopScopeData);
+        // this.shopCouponDialogVisible = true; // 显示店铺券弹窗
       } catch (error) {
         console.error("获取范围数据失败:", error);
       }
@@ -671,7 +573,7 @@ export default {
   },
   created() {
     console.log('平台优惠券数据加载开始');
-    this.getAllShopCoupons();
+    this.getAllPlatformCoupons();
     console.log('平台优惠券数据加载完成');
     // 模拟从后端获取数据
     this.loading = false;
