@@ -120,13 +120,18 @@ const routes = [
   },
   {
     path: '/shopmodel/couponManage',
-    name: '店铺优惠券管理',
+    name: 'shop-couponManage',
     component: () => import('../views/shopmodel/CouponManageView.vue')
   },
   {
     path: '/shopmodel/addPlatformCoupon',
-    name: '加入平台券的适用范围',
+    name: 'shop-addPlatformCoupon',//加入平台券的适用范围
     component: () => import('../views/shopmodel/AddPlatformCouponView.vue')
+  },
+  {
+    path: '/shopmodel/claimShopCoupon',
+    name: 'shop-claimShopCoupon',//加入平台券的适用范围
+    component: () => import('../views/shopmodel/ClaimShopCouponView.vue')
   },
   {
     path: '/shopmodel/shopShow',

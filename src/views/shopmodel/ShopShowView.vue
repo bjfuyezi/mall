@@ -33,6 +33,7 @@
           >
             {{ this.isBlocked ? '取消拉黑' : '拉黑' }}
           </el-button>
+          <el-button type="primary" size="mini" icon="el-icon-d-arrow-right" @click="toCoupon()">领取该店铺优惠券</el-button>
         </div>
       </aside>
   
@@ -117,9 +118,14 @@ export default {
     },
   },
   async created() {
-    this.user_id=this.$store.getters.userId;
+    // 从 Vuex store 中获取当前登录的用户 ID
+    this.user_id = this.$store.getters.userId;
+    // 从路由参数中获取店铺 ID
     this.shop_id = this.$route.params.id;
-    const shopResponse = await axios.post('http://localhost:8081/shop/getById', {id:this.shop_id});
+    // 发送 POST 请求到后端接口，获取店铺信息
+    // 假设后端接口 '/shop/getById' 需要一个 JSON 对象，其中包含一个 'id' 属性来指定店铺 ID
+    const shopResponse = await axios.post('http://localhost:8081/shop/getById', { id: this.shop_id });
+
     if ( shopResponse.data != null ) {
         this.shop = shopResponse.data;
     }
@@ -149,6 +155,17 @@ export default {
     }
   },
   methods: {
+    toCoupon(){
+      const shop_id = this.$route.params.id;
+      try {
+        this.$router.push({
+          name: 'shop-claimShopCoupon',
+          params: { id: shop_id }
+        });
+      } catch (error) {
+        console.error("Navigation failed:", error);
+      }
+    },
     // 过滤后的商品列表
     filteredProducts() {
         if (this.searchKeywordNow==='' || this.searchTypeNow===''){
@@ -236,7 +253,7 @@ export default {
   color: #ffd700;
 }
 .shop-location {
-  color: gray;
+  color: #eee;
   margin-bottom: 10px;
 }
 .shop-description {

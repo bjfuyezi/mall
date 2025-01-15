@@ -2,12 +2,23 @@
   <div class="user-coupons-container">
     <div class="user-coupons-page">
       <div class="coupons-container">
-        <h2>领取店铺【{{}}】优惠券</h2><!--存放店铺名--><!--TODO-->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>领取店铺{{this.shop_name}}优惠券</h2>
+          <el-button
+              type="primary"
+              icon="el-icon-d-arrow-left"
+              style="margin-left: auto;"
+              @click="toShop()"
+          >
+            返回店铺首页
+          </el-button>
+        </div>
+
 
         <!-- 优惠券列表 -->
         <div v-if="showCoupons.length > 0">
           <!-- 判断 showUserCoupons 是否有数据，若有则渲染表格 -->
-          <el-table :data="showCoupons" border stripe style="width: 100%; table-layout: auto;margin: 0 auto;">
+          <el-table :data="paginatedCoupons" border stripe style="width: 100%; table-layout: auto;margin: 0 auto;">
             <!-- 序号列 -->
             <el-table-column
                 label="序号"
@@ -67,36 +78,24 @@
           </el-table>
         </div>
 
+        <div style="margin-bottom: 20px; margin-top: 10px;" v-if="showCoupons.length > 0">
+          <el-pagination
+              :current-page="currentPage"
+              :page-sizes="[1, 5, 10, 15, 20, 50]"
+              :page-size="pageSize"
+              @current-change="handlePageChange"
+              @size-change="handlePageSizeChange"
+              background
+              layout="total, sizes,->, prev, pager, next, jumper"
+              :total="showCoupons.length"
+          />
+        </div>
+
         <!-- 空状态 -->
         <div v-else class="empty-state">
           <i class="el-icon-s-ticket"></i>
-          <p>没有平台优惠券可以领取</p>
+          <p>没有店铺优惠券可以领取</p>
         </div>
-
-        <!-- 弹窗1：平台券范围展示 -->
-        <el-dialog
-            :visible.sync="platformCouponDialogVisible"
-            title="平台券范围展示"
-            width="60%"
-            @close="clearPlatformScopeData"
-        >
-          <div v-if="platformScopeData.length > 0">
-            <h3>序号为{{this.selectIndex}}的优惠券的可用店铺信息如下</h3>
-            <el-table :data="platformScopeData" style="width: 100%" border stripe>
-              <el-table-column label="店铺名" prop="shop_name"></el-table-column>
-              <el-table-column label="描述" prop="shop_description"></el-table-column>
-              <el-table-column label="位置" prop="location"></el-table-column>
-              <el-table-column label="店铺评分" prop="level"></el-table-column>
-              <el-table-column label="状态" prop="status"></el-table-column>
-            </el-table>
-          </div>
-          <div v-else>
-            <p>没有可用范围。</p>
-          </div>
-          <span slot="footer" class="dialog-footer">
-            <el-button @click="platformCouponDialogVisible = false">关闭</el-button>
-          </span>
-        </el-dialog>
 
         <!-- 弹窗2：店铺券范围展示 -->
         <el-dialog
@@ -147,37 +146,76 @@ export default {
   name: 'UserCouponView',
   data() {
     return {
+      currentPage:1,
+      pageSize:10,
       // activeTab: 'all',//默认为all
       userId : null,
-      platformCoupons:[],
+      shop_id:null,
+      shop:[],
+      shop_name:"",
+      ShopCoupons:[],
       showCoupons:[],//展示的优惠券
       selectIndex:0,
       selectRow:[],
       showAddCouponDialog: false,
       loading :false,
-      platformCouponDialogVisible: false, // 平台券弹窗是否显示
       shopCouponDialogVisible: false, // 店铺券弹窗是否显示
-      platformScopeData:[],//存储返回来的平台券范围
       shopScopeData:[],
     }
   },
   computed:{
-
+    paginatedCoupons() {
+      // 计算当前页的起始索引和结束索引
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      // 截取当前页的数据
+      return this.showCoupons.slice(start, end);
+    },
   },
   methods:{
-
+    // 页码变化处理
+    handlePageChange(page) {
+      this.currentPage = page;
+    },
+    // 每页条数变化处理
+    handlePageSizeChange(size) {
+      this.pageSize = size;
+      this.currentPage = 1; // 页码重置为 1
+    },
+    toShop(){
+      const shop_id = this.$route.params.id;
+      try {
+        this.$router.push({
+          name: 'shop-show',
+          params: { id: shop_id }
+        });
+      } catch (error) {
+        console.error("Navigation failed:", error);
+      }
+    },
     // 获取优惠券数据
-    async getAllActivePlatformCoupons(){
+    async getAllActiveShopCoupons(){
       this.loading = true;
-      this.user_id=this.$store.getters.userId;
+      // 从 Vuex store 中获取当前登录的用户 ID
+      this.user_id = this.$store.getters.userId;
       console.log("当前用户id为：" + this.user_id);
+      // 从路由参数中获取店铺 ID
+      this.shop_id = this.$route.params.id;
+      // 发送 POST 请求到后端接口，获取店铺信息
+      // 假设后端接口 '/shop/getById' 需要一个 JSON 对象，其中包含一个 'id' 属性来指定店铺 ID
+      const shopResponse = await axios.post('http://localhost:8081/shop/getById', {id: this.shop_id});
+
+      if (shopResponse.data != null) {
+        this.shop = shopResponse.data;
+        this.shop_name = shopResponse.data.shop_name;
+      }
       try{
-        const platformCouponsResponse = await axios.get('http://localhost:8081/coupon/platform/active');
-        if(platformCouponsResponse.data!=null){
-          this.platformCoupons = platformCouponsResponse.data;
-          console.log("platform:",this.platformCoupons);
+        const ShopCouponsResponse = await axios.get(`http://localhost:8081/coupon/shop/active?shop_id=${this.shop_id}`);
+        if(ShopCouponsResponse.data!=null){
+          this.ShopCoupons = ShopCouponsResponse.data;
+          console.log("shop:",this.ShopCoupons);
           //不需要扁平化
-          this.showCoupons = this.platformCoupons;
+          this.showCoupons = this.ShopCoupons;
         }
       }catch (error) {
         console.error("获取平台优惠券数据失败", error);
@@ -200,15 +238,11 @@ export default {
       try {
         const response = await axios.get(`http://localhost:8081/userCoupon/scope/details?coupon_id=${couponId}`);
         const scopeDetails = response.data;
-        // 这里只有平台券
-        this.platformScopeData = scopeDetails.platform || [];
-        console.log("platform:",this.platformScopeData);
-        this.platformCouponDialogVisible = true; // 显示平台券弹窗
 
         // 这里只有店铺券
-        // this.shopScopeData = scopeDetails.shop || [];
-        // console.log("shop:",this.shopScopeData);
-        // this.shopCouponDialogVisible = true; // 显示店铺券弹窗
+        this.shopScopeData = scopeDetails.shop || [];
+        console.log("shop:",this.shopScopeData);
+        this.shopCouponDialogVisible = true; // 显示店铺券弹窗
       } catch (error) {
         console.error("获取范围数据失败:", error);
       }
@@ -232,10 +266,6 @@ export default {
         this.$message.error('优惠券领取失败: ' + error.response.data);
       });
     },
-    // 清空平台券数据
-    clearPlatformScopeData() {
-      this.platformScopeData = [];
-    },
     // 清空店铺券数据
     clearShopScopeData() {
       this.shopScopeData = [];
@@ -245,8 +275,9 @@ export default {
     },
   },
   created() {
+
     console.log('平台优惠券数据加载开始');
-    this.getAllActivePlatformCoupons();
+    this.getAllActiveShopCoupons();
     console.log('平台优惠券数据加载完成');
     // 模拟从后端获取数据
     this.loading = false;
