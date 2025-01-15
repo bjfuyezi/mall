@@ -64,6 +64,7 @@
               <router-link to="/shopmodel/productManage" class="nav-item">商品管理</router-link>
               <router-link to="/shopmodel/promotionManage" class="nav-item">推广管理</router-link>
               <router-link to="/shopmodel/couponManage" class="nav-item">优惠管理</router-link>
+              <router-link to="/shopmodel/addPlatformCoupon" class="nav-item">加入平台优惠</router-link>
             </template>
             <!-- 管理员页面按钮 -->
             <template v-if="isAuthenticated && currentUser.role === 'admin'">
