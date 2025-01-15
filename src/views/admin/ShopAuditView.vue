@@ -92,7 +92,8 @@ export default {
     // eslint-disable-next-line no-unused-vars
     async approveShop(shop) {
       const proAddResponse = await axios.post('http://localhost:8081/shop/status',{id:shop.shop_id, status:"closed"});
-      if ( proAddResponse.status === 200) {
+      const userAddResponse = await axios.post('http://localhost:8081/users/updateStatus',{id:shop.user_id, role:"seller"});
+      if ( proAddResponse.status === 200 && userAddResponse.status === 200 ) {
         alert('已通过审核');
         window.location.reload();
       }
