@@ -124,9 +124,19 @@ const routes = [
     component: () => import('../views/shopmodel/AddPlatformCouponView.vue')
   },
   {
-    path: '/shopmodel/shopManage',
-    name: 'shop-management',
-    component: () => import('../views/shopmodel/ShopManagementView.vue')
+    path: '/shopmodel/shopShow',
+    name: 'shop-show',
+    component: () => import('../views/shopmodel/ShopShowView.vue')
+  },
+  {
+    path: '/star/productStar',
+    name: 'product-star',
+    component: () => import('../views/star/ProductStarView.vue')
+  },
+  {
+    path: '/star/shopStar',
+    name: 'shop-star',
+    component: () => import('../views/star/ShopStarView.vue')
   },
   // 用户中心相关路由，需登录
   {

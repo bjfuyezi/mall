@@ -15,10 +15,13 @@
       </aside>
 
       <!-- 轮播广告 -->
-      <div class="banner" v-if="banners.length">
+      <div class="banner" >
         <div class="banner-content">
           <vue-slick-carousel v-bind="settings" @afterChange="logSlideChange">
-            <div v-for="(slide, index) in banners" :key="index" class="slide" >
+            <div v-if="this.banners.length == 0" class="slide">
+              <img src="../assets/banner.png" alt="Default Slide Image" />
+            </div>
+            <div v-else v-for="(slide, index) in banners" :key="index" class="slide" >
               <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
             </div>
           </vue-slick-carousel>
@@ -50,6 +53,7 @@
 <script>
 import axios from 'axios';
 import VueSlickCarousel from 'vue-slick-carousel';
+import defaultImage from '@/assets/banner.png';
 
 export default {
   name: 'HomeView',
@@ -58,6 +62,7 @@ export default {
   },
   data() {
     return {
+      defaultImageUrl: defaultImage,
       banners: [], // 存储轮播图的数据
       products: [], // 存储商品的数据
       showProducts: [], // 展示用的数据
@@ -98,7 +103,7 @@ export default {
       try {
         const response = await axios.get('http://localhost:8081/advertise/banner');
         this.banners = response.data;
-
+        console.log(this.banners.length == 0);
         // 销毁并重新初始化轮播图
         this.$nextTick(() => {
           if (this.$refs.carousel) {
@@ -240,9 +245,10 @@ export default {
         params: { id: product.product_id },
         state: { product }
       });
-    },logSlideChange(index) {
-    console.log('当前幻灯片索引:', index);
-    console.log('当前幻灯片数据:', this.banners[index]);
+    },
+    logSlideChange(index) {
+      console.log('当前幻灯片索引:', index);
+      console.log('当前幻灯片数据:', this.banners[index]);
   },
   },
   mounted() {
