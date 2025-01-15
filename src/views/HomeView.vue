@@ -232,14 +232,20 @@ export default {
     },
     selectCategory(value) {
       this.selectedCategory = value; 
-      this.page = 1;
+      //this.page = 1;
       if ( value != 'all') {
         this.showProducts = this.products.filter(product => product.category === this.selectedCategory); // 请求新类别下的产品
       } else {
         this.showProducts = this.products;
       }
     },
-    goToDetail(product) {
+    async goToDetail(product) {
+      //加入浏览记录
+      const userid = this.$store.getters.userId;
+      const picResponse = await axios.post('http://localhost:8081/recommend/history', {pid:product.product_id,uid:userid});
+      if(picResponse.status != 200){
+          console.log(picResponse);
+      }
       this.$router.push({
         name: 'product',
         params: { id: product.product_id },

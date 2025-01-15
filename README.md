@@ -20,6 +20,11 @@ npm run build
 npm run lint
 ```
 
+### 添加时间组件
+```
+npm install moment
+```
+
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
