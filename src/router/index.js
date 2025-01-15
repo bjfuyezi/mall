@@ -62,6 +62,11 @@ const routes = [
     name: 'product',
     component: ProductView
   },
+  {
+    path: '/product/:key',
+    name: 'searchView',
+    component: () => import('../views/searchView.vue')
+  },
   // 订单确认页
   {
     path: '/order/confirm',

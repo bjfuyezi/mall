@@ -1,35 +1,5 @@
 <template>
   <div class="home">
-    <div class="main-content">
-    <!-- 分类选择器 -->
-      <aside class="category-sidebar">
-        <h3>选择商品类别</h3>
-        <ul>
-          <li v-for="(category, index) in categories" :key="index">
-            <label>
-              <input type="radio" name="category" :value="category.value" @change="selectCategory(category.value)">
-              {{ category.label }}
-            </label>
-          </li>
-        </ul>
-      </aside>
-
-      <!-- 轮播广告 -->
-      <div class="banner" >
-        <div class="banner-content">
-          <vue-slick-carousel v-bind="settings" @afterChange="logSlideChange">
-            <div v-if="this.banners.length == 0" class="slide">
-              <img src="../assets/banner.png" alt="Default Slide Image" />
-            </div>
-            <div v-else v-for="(slide, index) in banners" :key="index" class="slide" >
-              <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
-            </div>
-          </vue-slick-carousel>
-        </div>
-      </div>
-    </div>
-    
-
     <!-- 商品展示区域 -->
     <div class="products-section" ref="productsSection">
       <h2>热门商品</h2>
@@ -52,18 +22,11 @@
 
 <script>
 import axios from 'axios';
-import VueSlickCarousel from 'vue-slick-carousel';
-import defaultImage from '@/assets/banner.png';
 
 export default {
-  name: 'HomeView',
-  components: {
-      VueSlickCarousel,
-  },
+  name: 'searchView',
   data() {
     return {
-      defaultImageUrl: defaultImage,
-      banners: [], // 存储轮播图的数据
       products: [], // 存储商品的数据
       showProducts: [], // 展示用的数据
       page: 1, // 当前页码
@@ -71,16 +34,6 @@ export default {
       loadingMore: false, // 是否正在加载更多商品
       showBanner: true,
       bannerOffset: 0, // 新增：用于跟踪广告偏移量
-      categories: [
-        { label: '全部', value: 'all' },
-        { label: '生鲜食品', value: 'fresh' },
-        { label: '零食小吃', value: 'snack' },
-        { label: '酒水饮料', value: 'drink' },
-        { label: '干货腌货', value: 'dry' },
-        { label: '即食食品', value: 'instant' },
-        { label: '农产品', value: 'green' }
-        // 添加更多类别...
-      ],
       settings: {
         dots: true,
         infinite: true,
@@ -91,33 +44,16 @@ export default {
         autoplaySpeed: 2000, // 每张图片展示时间，例如5秒
         lazyLoad: 'ondemand', // 按需懒加载图片
       },
-      selectedCategory: 'all', // 默认选中的类别
+      key:null // 默认选中的类别
     };
   },
   created() {
-    this.fetchBanners();
+    this.key = this.$route.params.key;
+    this.ans =0;
+    this.page =0;
     this.fetchProducts();
   },
   methods: {
-    async fetchBanners() {
-      try {
-        const response = await axios.get('http://localhost:8081/advertise/banner');
-        this.banners = response.data;
-        console.log(this.banners.length == 0);
-        // 销毁并重新初始化轮播图
-        this.$nextTick(() => {
-          if (this.$refs.carousel) {
-            this.$refs.carousel.destroy(); // 销毁当前实例
-            this.$nextTick(() => {
-              this.$refs.carousel.init(); // 重新初始化
-              this.$refs.carousel.play(); // 启动自动播放
-            });
-          }
-        });
-      } catch (error) {
-        console.error('获取轮播图失败:', error);
-      }
-    },
     async fetchProducts() {
       try {
         this.loadingMore = true;
@@ -136,16 +72,17 @@ export default {
           if(pIds.length>0){
               await axios.post('http://localhost:8081/product/flushGreedy', { ids: pIds });
           }
-          this.selectCategory(this.selectedCategory);//保持当前分类
+          this.selectKey(this.key);//保持当前分类
           this.ans+=1;
           this.page+=1;
         }
         else{
           console.log("加新的");
               const userid = this.$store.getters.userId;
-              const response = await axios.get('http://localhost:8081/product/homeview',{
+              const response = await axios.get('http://localhost:8081/product/searchview',{
                 params:{
-                  uid:userid
+                  uid:userid,
+                  key:this.key
                 }
               });
               if (response.data != null) {
@@ -187,31 +124,10 @@ export default {
                 await axios.post('http://localhost:8081/product/flushGreedy', { ids: pIdsString });
               }
               console.log("当前的",this.products);
-              this.selectCategory(this.selectedCategory);//保持现有类别
+              this.selectKey(this.key);//保持现有类别
               this.page+=1;
               this.ans=0;
         }
-        // 动态设置 pageSize
-        // const pageSize = this.page === 1 ? 4 : 8;
-        // let newProducts = Array.from({ length: pageSize }, (element, index) => ({
-        //   imagePath: 'test.jpg',
-        //   name: 'aaa',
-        //   price: '12',
-        //   id: `${this.page}-${index}`, // 确保每个产品有一个唯一的 ID
-        // }));
-
-        // 实际请求请取消注释下面的代码，并移除模拟数据部分
-        
-        // 将新获取的商品追加到现有商品列表中
-        // this.products.push(...newProducts);
-
-        // if (this.page === 1) {
-        //   // 如果是第一页，模拟有广告的情况，减少商品数量
-        //   this.products = this.products.slice(0, 4);
-        //   this.showProducts = this.showProducts.slice(0, 4);
-        // }
-
-        // this.page++;
         this.loadingMore = false;
       } catch (error) {
         console.error('获取商品失败:', error);
@@ -228,15 +144,6 @@ export default {
         if (isNearBottom) {
           this.fetchProducts();
         }
-      }
-    },
-    selectCategory(value) {
-      this.selectedCategory = value; 
-      //this.page = 1;
-      if ( value != 'all') {
-        this.showProducts = this.products.filter(product => product.category === this.selectedCategory); // 请求新类别下的产品
-      } else {
-        this.showProducts = this.products;
       }
     },
     async goToDetail(product) {
@@ -256,6 +163,20 @@ export default {
       console.log('当前幻灯片索引:', index);
       console.log('当前幻灯片数据:', this.banners[index]);
   },
+selectKey(value) {
+      this.key = value; 
+      console.log(this.key);
+      //this.page = 1;
+      if ( this.key != null) {
+            this.showProducts = this.products.filter(product => {
+            return product.name.includes(this.key);
+          }
+        );
+      } else {
+        this.showProducts = this.products;
+      }
+      console.log(this.showBanner);
+    },
   },
   mounted() {
         this.$nextTick(() => {
