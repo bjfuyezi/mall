@@ -109,7 +109,7 @@
 
               <!-- 强制下线按钮（红色） -->
               <el-button 
-                v-if="scope.row.status === 'approved' || scope.row.status === 'running'" 
+                v-if="scope.row.status === 'approved' || scope.row.status === 'running'|| scope.row.status === 'pending'" 
                 @click="updateAd(scope.row.advertisement_id,'expired')" 
                 size="small" 
                 type="danger">
@@ -246,6 +246,8 @@ export default {
     //更新状态
     async updateAd(adId,status,reason){
       console.log(adId,status);
+      let x =confirm('强制下线将不会退还您已支付的费用，确定下线吗？');
+      if(x){
       try {
         const response = await axios.post('http://localhost:8081/advertise/status',{
             advertisement_id: adId,
@@ -257,6 +259,7 @@ export default {
         this.fetchAds();
       } catch (error) {
         console.error("操作出错", error);
+      }
       }
     },
     // 提交原因
