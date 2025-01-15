@@ -5,7 +5,8 @@ import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
 import AdminView from '../views/admin/AdminView.vue'
-import CouponManagement from '../views/admin/CouponManagement.vue'
+// import CouponManagement from '../views/admin/CouponManagement.vue'
+import CouponManageView from "@/views/admin/CouponManageView.vue";
 import UserManagement from '../views/admin/UserManagement.vue'
 
 // 使用 VueRouter 插件
@@ -114,13 +115,28 @@ const routes = [
   },
   {
     path: '/shopmodel/couponManage',
-    name: 'coupon-management',
-    component: () => import('../views/shopmodel/CouponManagementView.vue')
+    name: '店铺优惠券管理',
+    component: () => import('../views/shopmodel/CouponManageView.vue')
   },
   {
-    path: '/shopmodel/shopManage',
-    name: 'shop-management',
-    component: () => import('../views/shopmodel/ShopManagementView.vue')
+    path: '/shopmodel/addPlatformCoupon',
+    name: '加入平台券的适用范围',
+    component: () => import('../views/shopmodel/AddPlatformCouponView.vue')
+  },
+  {
+    path: '/shopmodel/shopShow',
+    name: 'shop-show',
+    component: () => import('../views/shopmodel/ShopShowView.vue')
+  },
+  {
+    path: '/star/productStar',
+    name: 'product-star',
+    component: () => import('../views/star/ProductStarView.vue')
+  },
+  {
+    path: '/star/shopStar',
+    name: 'shop-star',
+    component: () => import('../views/star/ShopStarView.vue')
   },
   // 用户中心相关路由，需登录
   {
@@ -197,8 +213,8 @@ const routes = [
       },
       {
         path: 'coupons',
-        name: 'CouponManagement',
-        component: CouponManagement
+        name: '优惠券管理',
+        component: CouponManageView
       },
       {
         path: 'ads',

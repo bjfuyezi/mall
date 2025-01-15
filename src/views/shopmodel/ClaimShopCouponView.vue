@@ -2,7 +2,7 @@
   <div class="user-coupons-container">
     <div class="user-coupons-page">
       <div class="coupons-container">
-        <h2>领取平台优惠券</h2>
+        <h2>领取店铺【{{}}】优惠券</h2><!--存放店铺名--><!--TODO-->
 
         <!-- 优惠券列表 -->
         <div v-if="showCoupons.length > 0">
@@ -99,42 +99,42 @@
         </el-dialog>
 
         <!-- 弹窗2：店铺券范围展示 -->
-                <el-dialog
-                    :visible.sync="shopCouponDialogVisible"
-                    title="店铺券范围展示"
-                    width="60%"
-                    @close="clearShopScopeData"
-                >
-                  <div v-if="shopScopeData.length > 0">
-                    <h3>序号为{{this.selectIndex}}的优惠券的可用商品信息如下</h3>
-                    <el-table :data="shopScopeData" style="width: 100%" border stripe>
-                      <el-table-column label="产品名" prop="name"></el-table-column>
-                      <el-table-column label="分类" prop="category"></el-table-column>
-                      <el-table-column label="价格" prop="price"></el-table-column>
-                      <el-table-column label="描述" prop="price"></el-table-column>
-                      <el-table-column label="库存">
-                        <template slot-scope="scope">
-                          <div>
-                            <div v-if="scope.row.quantity && scope.row.quantity.length>0">
-                              <div v-for="(item, index) in parseJson(scope.row.quantity)" :key="index">
-                                <span>{{ item.flavor }}: {{ item.quantity }} {{ scope.row.unit }}</span>
-                              </div>
-                            </div>
-                            <div v-else>无库存</div>
-                          </div>
-                        </template>
-                      </el-table-column>
-                      <el-table-column label="状态" prop="status"></el-table-column>
-                      <!-- 根据需要展示更多内容 -->
-                    </el-table>
+        <el-dialog
+            :visible.sync="shopCouponDialogVisible"
+            title="店铺券范围展示"
+            width="60%"
+            @close="clearShopScopeData"
+        >
+          <div v-if="shopScopeData.length > 0">
+            <h3>序号为{{this.selectIndex}}的优惠券的可用商品信息如下</h3>
+            <el-table :data="shopScopeData" style="width: 100%" border stripe>
+              <el-table-column label="产品名" prop="name"></el-table-column>
+              <el-table-column label="分类" prop="category"></el-table-column>
+              <el-table-column label="价格" prop="price"></el-table-column>
+              <el-table-column label="描述" prop="price"></el-table-column>
+              <el-table-column label="库存">
+                <template slot-scope="scope">
+                  <div>
+                    <div v-if="scope.row.quantity && scope.row.quantity.length>0">
+                      <div v-for="(item, index) in parseJson(scope.row.quantity)" :key="index">
+                        <span>{{ item.flavor }}: {{ item.quantity }} {{ scope.row.unit }}</span>
+                      </div>
+                    </div>
+                    <div v-else>无库存</div>
                   </div>
-                  <div v-else>
-                    <p>没有可用范围。</p>
-                  </div>
-                  <span slot="footer" class="dialog-footer">
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" prop="status"></el-table-column>
+              <!-- 根据需要展示更多内容 -->
+            </el-table>
+          </div>
+          <div v-else>
+            <p>没有可用范围。</p>
+          </div>
+          <span slot="footer" class="dialog-footer">
                     <el-button @click="shopCouponDialogVisible = false">关闭</el-button>
                   </span>
-                </el-dialog>
+        </el-dialog>
 
       </div>
     </div>

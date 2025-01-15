@@ -18,6 +18,13 @@
         <div v-if="showUserCoupons.length > 0">
           <!-- 判断 showUserCoupons 是否有数据，若有则渲染表格 -->
           <el-table :data="showUserCoupons" border stripe style="width: 100%; table-layout: auto;margin: 0 auto;">
+            <!-- 序号列 -->
+            <el-table-column
+                label="序号"
+                type="index"
+                span="3"
+                :index="(index) => index + 1"
+            ></el-table-column>
             <!-- 券类型列 -->
             <!-- :formatter="couponTypeFormatter" 使用自定义的 formatter 来判断券类型 -->
             <el-table-column
@@ -73,7 +80,7 @@
             >
               <template slot-scope="scope">
                 <!-- 按钮点击事件调用 viewCouponRange 方法 -->
-                <el-button @click="viewCouponRange(scope.row)" type="text" size="small">查看范围</el-button>
+                <el-button @click="viewCouponRange(scope.row,scope.$index)" type="text" size="small">查看范围</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -93,7 +100,7 @@
             @close="clearPlatformScopeData"
         >
           <div v-if="platformScopeData.length > 0">
-            <h3>该优惠券的可用店铺信息如下</h3>
+            <h3>序号为{{this.selectIndex}}的优惠券的可用店铺信息如下</h3>
             <el-table :data="platformScopeData" style="width: 100%" border stripe>
               <el-table-column label="店铺名" prop="shop_name"></el-table-column>
               <el-table-column label="描述" prop="shop_description"></el-table-column>
@@ -118,7 +125,7 @@
             @close="clearShopScopeData"
         >
           <div v-if="shopScopeData.length > 0">
-            <h3>该优惠券的可用商品信息如下</h3>
+            <h3>序号为{{this.selectIndex}}的优惠券的可用商品信息如下</h3>
             <el-table :data="shopScopeData" style="width: 100%" border stripe>
               <el-table-column label="产品名" prop="name"></el-table-column>
               <el-table-column label="分类" prop="category"></el-table-column>
@@ -170,6 +177,7 @@ export default {
       shopCouponDialogVisible: false, // 店铺券弹窗是否显示
       platformScopeData:[],//存储返回来的平台券范围
       shopScopeData:[],
+      selectIndex:0,
     }
   },
   computed:{
@@ -293,7 +301,8 @@ export default {
       return JSON.parse(str);
     },
     // 查看券的可用范围
-    async viewCouponRange(row) {
+    async viewCouponRange(row,index) {
+      this.selectIndex = index+1;
       const couponId = row.coupon_id; // 获取当前行的 coupon_id
       try {
         const response = await axios.get(`http://localhost:8081/userCoupon/scope/details?coupon_id=${couponId}`);
@@ -316,7 +325,14 @@ export default {
         console.error("获取范围数据失败:", error);
       }
     },
-
+    // 清空平台券数据
+    clearPlatformScopeData() {
+      this.platformScopeData = [];
+    },
+    // 清空店铺券数据
+    clearShopScopeData() {
+      this.shopScopeData = [];
+    }
   },
   created() {
     console.log('用户优惠券数据加载开始');
