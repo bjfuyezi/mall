@@ -7,7 +7,7 @@
         <!-- 优惠券列表 -->
         <div v-if="showCoupons.length > 0">
           <!-- 判断 showUserCoupons 是否有数据，若有则渲染表格 -->
-          <el-table :data="showCoupons" border stripe style="width: 100%; table-layout: auto;margin: 0 auto;">
+          <el-table :data="paginatedCoupons" border stripe style="width: 100%; table-layout: auto;margin: 0 auto;">
             <!-- 序号列 -->
             <el-table-column
                 label="序号"
@@ -67,6 +67,18 @@
           </el-table>
         </div>
 
+        <div style="margin-bottom: 20px; margin-top: 10px;" v-if="showCoupons.length > 0">
+          <el-pagination
+              :current-page="currentPage"
+              :page-sizes="[1, 5, 10, 15, 20, 50]"
+              :page-size="pageSize"
+              @current-change="handlePageChange"
+              @size-change="handlePageSizeChange"
+              background
+              layout="total, sizes,->, prev, pager, next, jumper"
+              :total="showCoupons.length"
+          />
+        </div>
         <!-- 空状态 -->
         <div v-else class="empty-state">
           <i class="el-icon-s-ticket"></i>
@@ -148,6 +160,8 @@ export default {
   data() {
     return {
       // activeTab: 'all',//默认为all
+      currentPage:1,
+      pageSize:10,
       userId : null,
       platformCoupons:[],
       showCoupons:[],//展示的优惠券
@@ -162,10 +176,24 @@ export default {
     }
   },
   computed:{
-
+    paginatedCoupons() {
+      // 计算当前页的起始索引和结束索引
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      // 截取当前页的数据
+      return this.showCoupons.slice(start, end);
+    },
   },
   methods:{
-
+    // 页码变化处理
+    handlePageChange(page) {
+      this.currentPage = page;
+    },
+    // 每页条数变化处理
+    handlePageSizeChange(size) {
+      this.pageSize = size;
+      this.currentPage = 1; // 页码重置为 1
+    },
     // 获取优惠券数据
     async getAllActivePlatformCoupons(){
       this.loading = true;
