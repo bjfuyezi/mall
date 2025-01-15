@@ -210,7 +210,7 @@ export default {
               "start_time": moment(start).format('YYYY-MM-DD HH:mm:ss'),
               "end_time": moment(end).format('YYYY-MM-DD HH:mm:ss'),
               "scope": JSON.stringify(this.selectedProducts),
-              "request": parseFloat(this.coupon.request),
+              "request": parseFloat(this.coupon.request),//TODO:这里有问题
               "off": parseFloat(this.coupon.off),
               "total": this.coupon.total,
               "claim_limit": this.coupon.claim_limit,

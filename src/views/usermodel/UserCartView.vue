@@ -40,7 +40,7 @@
                 @change="handleItemSelect(item)"
             ></el-checkbox>
 
-            <div v-if="item.isShop">
+            <div v-if="item.isShop" class="shop-container">
               <!-- 商铺复选框 -->
               <el-checkbox
                   :value="item.selected"
@@ -48,6 +48,7 @@
                   @change="handleShopSelect(item)">
                 店铺：{{ item.shop_name }}
               </el-checkbox>
+              <el-button type="text" @click="toShop(item.shop_id)" icon="el-icon-d-arrow-right">查看店铺其他商品</el-button>
             </div>
             <div class="item-product" v-else>
               <img :src="'http://localhost:8081'+item.picture_url" alt="商品图片"/>
@@ -106,7 +107,8 @@
               @change="handleSelectAll"
           >全选</el-checkbox>
           <el-button type="text" @click="deleteSelectedItems">删除选中商品</el-button>
-          <el-button type="text" @click="MoveToFavorite">移入收藏夹</el-button>
+<!--          <el-button type="text" @click="checkCoupons">选择优惠券</el-button>-->
+<!--          <el-button type="text" @click="MoveToFavorite">移入收藏夹</el-button>-->
         </div>
         <div class="footer-right">
           <div class="selected-info">
@@ -237,6 +239,12 @@ export default {
     },
   },
   methods: {
+    toShop(shop_id){
+      this.$router.push({
+        name: 'shop-show',
+        params: { id: shop_id }
+      });
+    },
     handleShopSelect(shopItem) {
       // 切换店铺的选中状态
       const newSelectedState = !shopItem.selected;
@@ -405,7 +413,8 @@ export default {
     },
     //   TODO:将选中的商品移入收藏夹
     MoveToFavorite(){
-
+      // todo:this.user_id=this.$store.getters.userId;
+      //const sResponse = await axios.post('http://localhost:8081/product/changeStar', {pid:this.product.product_id, uid:this.user_id});
     },
     // 结算
     checkout() {
@@ -466,6 +475,20 @@ export default {
 </script>
 
 <style>
+.shop-container {
+  display: flex;
+  align-items: center; /* 垂直居中对齐 */
+  justify-content: space-between; /* 两端对齐 */
+}
+
+.shop-container .el-checkbox {
+  flex: 0 0 auto; /* 不允许复选框伸缩 */
+}
+
+.shop-container .el-button {
+  flex: 0 0 auto; /* 不允许按钮伸缩 */
+  margin-left: 10px; /* 给按钮和复选框之间添加一些间距 */
+}
 .cart-page {
   background-color: #f5f5f5; /* 设置页面背景颜色为淡灰色 */
   padding: 20px 0; /* 设置上下内边距为 20px，左右内边距为 0 */
