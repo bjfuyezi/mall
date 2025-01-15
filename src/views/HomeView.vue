@@ -17,14 +17,15 @@
       <!-- 轮播广告 -->
       <div class="banner" >
         <div class="banner-content">
-          <vue-slick-carousel v-bind="settings" @afterChange="logSlideChange">
-            <div v-if="this.banners.length == 0" class="slide">
+          <vue-slick-carousel ref="carousel"  v-bind="settings" @afterChange="logSlideChange">
+            <!-- <div v-if="this.banners.length == 0" class="slide">
               <img src="../assets/banner.png" alt="Default Slide Image" />
-            </div>
-            <div v-else v-for="(slide, index) in banners" :key="index" class="slide" >
+            </div> -->
+            <div v-for="(slide, index) in banners" :key="index" class="slide" >
               <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
             </div>
           </vue-slick-carousel>
+          <!-- <button @click="goToNextSlide">下一张</button> -->
         </div>
       </div>
     </div>
@@ -90,6 +91,7 @@ export default {
         autoplay: true,
         autoplaySpeed: 2000, // 每张图片展示时间，例如5秒
         lazyLoad: 'ondemand', // 按需懒加载图片
+        initialSide:1
       },
       selectedCategory: 'all', // 默认选中的类别
     };
@@ -110,14 +112,21 @@ export default {
             this.$refs.carousel.destroy(); // 销毁当前实例
             this.$nextTick(() => {
               this.$refs.carousel.init(); // 重新初始化
+              this.$refs.carousel.slick.slickGoTo(1); 
               this.$refs.carousel.play(); // 启动自动播放
             });
           }
         });
+        // 确保 vue-slick-carousel 在数据变化后重新渲染
       } catch (error) {
         console.error('获取轮播图失败:', error);
       }
     },
+    goToNextSlide() {
+    if (this.$refs.carousel) {
+      this.$refs.carousel.slickNext(); // 调用slickNext方法切换到下一张
+    }
+  },
     async fetchProducts() {
       try {
         this.loadingMore = true;
@@ -322,12 +331,27 @@ export default {
     }
 
     .banner {
+      width: 100%;
   flex-grow: 1;
   background-color: #f5f5f5;
   max-height: 400px; // 明确设定最大高度为400px
   max-width: 80%;
   overflow: hidden; // 防止内容溢出
+button {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
 
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+  }
 
 .banner-content {
   height: 100%; // 确保 banner 内容占据全部可用空间
@@ -338,8 +362,8 @@ export default {
 }
 
 .slide img {
-  width: auto; // 允许宽度根据比例调整
-  height: 100%; // 图片占据 slide 的全部高度
+  width: 1005; // 允许宽度根据比例调整
+  height: auto; // 图片占据 slide 的全部高度
   object-fit: cover; // 保证图片被裁剪并覆盖整个区域
   display: block; // 避免底部空白
 }
