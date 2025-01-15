@@ -5,7 +5,8 @@ import VueRouter from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductView from '../views/ProductView.vue'
 import AdminView from '../views/admin/AdminView.vue'
-import CouponManagement from '../views/admin/CouponManagement.vue'
+// import CouponManagement from '../views/admin/CouponManagement.vue'
+import CouponManageView from "@/views/admin/CouponManageView.vue";
 import UserManagement from '../views/admin/UserManagement.vue'
 
 // 使用 VueRouter 插件
@@ -114,8 +115,13 @@ const routes = [
   },
   {
     path: '/shopmodel/couponManage',
-    name: 'coupon-management',
-    component: () => import('../views/shopmodel/CouponManagementView.vue')
+    name: '店铺优惠券管理',
+    component: () => import('../views/shopmodel/CouponManageView.vue')
+  },
+  {
+    path: '/shopmodel/addPlatformCoupon',
+    name: '加入平台券的适用范围',
+    component: () => import('../views/shopmodel/AddPlatformCouponView.vue')
   },
   {
     path: '/shopmodel/shopManage',
@@ -197,8 +203,8 @@ const routes = [
       },
       {
         path: 'coupons',
-        name: 'CouponManagement',
-        component: CouponManagement
+        name: '优惠券管理',
+        component: CouponManageView
       },
       {
         path: 'ads',
