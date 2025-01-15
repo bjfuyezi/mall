@@ -96,6 +96,7 @@ export default {
       console.log('here');
       const userid = this.$store.getters.userId;
       const shopResponse = await axios.post('http://localhost:8081/shop/getByUser_id', {id:userid});
+      this.shop_id=shopResponse.data.shop_id;
       if ( shopResponse.data != null ) {
           const proResponse = await axios.post('http://localhost:8081/product/getAllByShop_id', {id:shopResponse.data.shop_id});
           if ( proResponse.data != null ) {
@@ -157,7 +158,9 @@ export default {
           //进入支付页面
           console.log(response.data);
           this.$emit('refresh',response.data);
-        }else {
+        }else if(response.status==400){
+          alert('已有推广正在进行');
+        }else{
           alert('申请失败，遇到',response.status,'错误');
         }
         this.clearForm();
