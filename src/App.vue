@@ -96,6 +96,10 @@ export default {
     // 处理搜索逻辑的方法
     handleSearch() {
       console.log('搜索:', this.searchKeyword)  // 在控制台输出搜索关键词
+      this.$router.push({
+        name: 'searchView',
+        params: { key: this.searchKeyword }
+      });
     },
     // 处理命令的选择方法，根据传入的 command 执行不同的操作
     handleCommand(command) {
