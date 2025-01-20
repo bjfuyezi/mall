@@ -370,7 +370,7 @@ export default {
             //检查当前订单状态判断是否删除/
             const id = data.advertisement_id;
             const response = await axios.post(`http://localhost:8081/advertise/checkdel?id=${id}`);
-              if(response.status == 200){
+              if(response.data == true){
                 alert('申请成功');
               }else alert('申请失败');
             //清理资源
