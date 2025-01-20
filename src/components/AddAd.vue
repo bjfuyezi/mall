@@ -132,7 +132,6 @@ export default {
         }
     },
     async handleSubmit() {
-      try {
         this.error = null;
 
         const formData = new FormData();
@@ -154,19 +153,16 @@ export default {
 
         // 发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
-        if(response.status==200){
+        console.log(response.data);
+        if(response.data.advertisement_id){
           //进入支付页面
           console.log(response.data);
           this.$emit('refresh',response.data);
-        }else if(response.status==400){
+        }else {
           alert('已有推广正在进行');
-        }else{
-          alert('申请失败，遇到',response.status,'错误');
         }
         this.clearForm();
-      } catch (err) {
-        this.error = err.message || '发生错误，请稍后再试';
-      }
+
       this.closeDialog();
     },
     // 关闭弹窗的方法

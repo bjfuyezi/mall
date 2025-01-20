@@ -155,7 +155,6 @@ export default {
       }
     },
     async handleSubmit() {
-      try {
         this.error = null;
 
         const formData = new FormData();
@@ -185,17 +184,19 @@ export default {
 
         //发送请求到服务器
         const response = await axios.post('http://localhost:8081/advertise/create', formData);
-        if(response.status==200){
-            console.log(response.data);
-            this.$emit('refresh',response.data);
-        }else if(response.data==409){
-          alert('当前时间段广告申请已达上限');
-        }else if(response.status==400){
+        console.log(response.data);
+        if(response.data.advertisement_id){
+          if(response.data.advertisement_id<0){
+            alert('该时间段已被占用，无法再投放广告');
+          }else{
+            //进入支付页面
+          console.log(response.data);
+          this.$emit('refresh',response.data);
+          }
+        }else {
           alert('已有推广正在进行');
         }
-      } catch (err) {
-        this.error = err.message || '发生错误，请稍后再试';
-      }
+
       console.log('到这里');
       this.closeDialog();
     },

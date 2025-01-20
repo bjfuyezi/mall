@@ -18,10 +18,10 @@
       <div class="banner" >
         <div class="banner-content">
           <vue-slick-carousel ref="carousel"  v-bind="settings" @afterChange="logSlideChange">
-            <!-- <div v-if="this.banners.length == 0" class="slide">
+            <div v-if="this.banners.length == 0" class="slide">
               <img src="../assets/banner.png" alt="Default Slide Image" />
-            </div> -->
-            <div v-for="(slide, index) in banners" :key="index" class="slide" >
+            </div>
+            <div v-else v-for="(slide, index) in banners" :key="index" class="slide" >
               <img :src="`http://localhost:8081${slide.url}`" alt="Slide Image" />
             </div>
           </vue-slick-carousel>
