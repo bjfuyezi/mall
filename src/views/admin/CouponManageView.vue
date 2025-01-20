@@ -432,8 +432,8 @@ export default {
               "coupon_id":this.editCouponForm.coupon_id,
               "start_time": moment(this.editCouponForm.start_time).format('YYYY-MM-DD HH:mm:ss'),
               "end_time": moment(this.editCouponForm.end_time).format('YYYY-MM-DD HH:mm:ss'),
-              "request": this.editCouponForm.request,
-              "off": this.editCouponForm.off,
+              "request": parseFloat(this.editCouponForm.request),
+              "off": parseFloat(this.editCouponForm.off),
               "total": this.editCouponForm.total,
               "claim_limit": this.editCouponForm.claim_limit,
               "max_unused_count":this.editCouponForm.max_unused_count,
@@ -536,7 +536,6 @@ export default {
       }finally {
         this.loading = false;
       }
-
     },
     handleTabClick(tab) {
       const status = tab.name;
